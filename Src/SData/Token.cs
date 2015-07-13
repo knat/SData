@@ -51,7 +51,7 @@ namespace SData {
             TextSpan = textSpan;
         }
         public readonly int Kind;
-        public readonly string Value;//for TokenKind.Identifier to TokenKind.RealValue
+        public readonly string Value;//for TokenKind.NormalIdentifier to TokenKind.Real
         public readonly TextSpan TextSpan;
         public TokenKind TokenKind {
             get {
@@ -108,7 +108,7 @@ namespace SData {
                 return IsNormalIdentifier && Value == "false";
             }
         }
-        public bool IsBool {
+        public bool IsBoolean {
             get {
                 return IsTrue || IsFlase;
             }

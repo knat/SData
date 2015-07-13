@@ -37,13 +37,19 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AtomExtensions.cs" />
+    <Compile Include="Binary.cs" />
     <Compile Include="Context.cs" />
     <Compile Include="Diagnostics.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="FullName.cs" />
+    <Compile Include="IgnoreCaseString.cs" />
     <Compile Include="Lexer.cs" />
-    <Compile Include="Nodes.cs" />
+    <Compile Include="Metadata.cs" />
     <Compile Include="Parser.cs" />
+    <Compile Include="ParserBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReflectionExtensions.cs" />
     <Compile Include="SimpleStringReader.cs" />
     <Compile Include="StringBuilderBuffer.cs" />
     <Compile Include="TextSpan.cs" />

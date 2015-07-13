@@ -10,9 +10,9 @@ namespace SData {
             return StringBuilderBuffer.Acquire().AppendFormat(CultureInfo.InvariantCulture, format, args).ToStringAndRelease();
         }
 
-        public static string ToInvString(this int value) {
-            return value.ToString(CultureInfo.InvariantCulture);
-        }
+        //public static string ToInvString(this int value) {
+        //    return value.ToString(CultureInfo.InvariantCulture);
+        //}
 
         //
         public static int AggregateHash(int hash, int newValue) {
