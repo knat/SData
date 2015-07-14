@@ -5,7 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 
-namespace SData {
+namespace SData.Internal {
 
     public sealed class Lexer {
         [ThreadStatic]

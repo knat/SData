@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace SData {
+namespace SData.Internal {
     public sealed class SimpleStringReader : TextReader {
         public SimpleStringReader() { }
         public SimpleStringReader(string s) {

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using SData.Internal;
 
 namespace SData {
     public abstract class AssemblyMd {
@@ -74,6 +75,20 @@ namespace SData {
     public abstract class LocalTypeMd : TypeMd {
         protected LocalTypeMd(TypeKind kind)
             : base(kind) {
+        }
+        public bool IsNullable {
+            get {
+                return Kind == TypeKind.Nullable;
+            }
+        }
+        public LocalTypeMd NonNullableType {
+            get {
+                var nt = this as NullableTypeMd;
+                if (nt != null) {
+                    return nt.ElementType;
+                }
+                return this;
+            }
         }
     }
     public sealed class NullableTypeMd : LocalTypeMd {
@@ -491,15 +506,15 @@ namespace SData {
 
     public sealed class ClassTypeMd : GlobalTypeMd {
         public ClassTypeMd(FullName fullName, bool isAbstract, ClassTypeMd baseClass,
-            ClassTypePropertyMd[] properties, Type clrType)
+            Dictionary<string, ClassTypePropertyMd> thisPropertyMap, Type clrType)
             : base(TypeKind.Class, fullName) {
             IsAbstract = isAbstract;
             BaseClass = baseClass;
-            _properties = properties;
+            //_properties = properties;
             ClrType = clrType;
             TypeInfo ti = clrType.GetTypeInfo();
-            if (properties != null) {
-                foreach (var prop in properties) {
+            if (thisPropertyMap != null) {
+                foreach (var prop in thisPropertyMap.Values) {
                     prop.GetClrPropertyOrField(ti);
                 }
             }
@@ -510,13 +525,33 @@ namespace SData {
                 ClrMetadataProperty = ReflectionExtensions.GetProperty(ti, ReflectionExtensions.MetadataNameStr);
                 ClrTextSpanProperty = ReflectionExtensions.GetProperty(ti, ReflectionExtensions.TextSpanNameStr);
                 ClrUnknownPropertiesProperty = ReflectionExtensions.GetProperty(ti, ReflectionExtensions.UnknownPropertiesNameStr);
+                _propertyMap = thisPropertyMap ?? _emptyPropertyMap;
+            }
+            else if (thisPropertyMap == null) {
+                _propertyMap = baseClass._propertyMap;
+            }
+            else {
+                var pm = new Dictionary<string, ClassTypePropertyMd>(baseClass._propertyMap.Count + thisPropertyMap.Count);
+                foreach (var kv in baseClass._propertyMap) {
+                    pm.Add(kv.Key, kv.Value);
+                }
+                foreach (var kv in thisPropertyMap) {
+                    pm.Add(kv.Key, kv.Value);
+                }
+                _propertyMap = pm;
             }
             ClrOnLoadingMethod = ti.GetDeclaredMethod(ReflectionExtensions.OnLoadingNameStr);
             ClrOnLoadedMethod = ti.GetDeclaredMethod(ReflectionExtensions.OnLoadedNameStr);
         }
         public readonly bool IsAbstract;
         public readonly ClassTypeMd BaseClass;
-        private readonly ClassTypePropertyMd[] _properties;
+        private static readonly Dictionary<string, ClassTypePropertyMd> _emptyPropertyMap = new Dictionary<string, ClassTypePropertyMd>(0);
+        internal readonly Dictionary<string, ClassTypePropertyMd> _propertyMap;//includes base properties
+        public IReadOnlyDictionary<string, ClassTypePropertyMd> PropertyMap {
+            get {
+                return _propertyMap;
+            }
+        }
         public readonly Type ClrType;
         public readonly ConstructorInfo ClrConstructor;//for non abstract class
         public readonly PropertyInfo ClrMetadataProperty;//for top class
@@ -532,45 +567,45 @@ namespace SData {
             }
             return false;
         }
-        public ClassTypePropertyMd GetPropertyInHierarchy(string name) {
-            var props = _properties;
-            if (props != null) {
-                var length = props.Length;
-                for (var i = 0; i < length; ++i) {
-                    if (props[i].Name == name) {
-                        return props[i];
-                    }
-                }
-            }
-            if (BaseClass != null) {
-                return BaseClass.GetPropertyInHierarchy(name);
-            }
-            return null;
-        }
-        public void GetPropertiesInHierarchy(ref List<ClassTypePropertyMd> propList) {
-            if (BaseClass != null) {
-                BaseClass.GetPropertiesInHierarchy(ref propList);
-            }
-            if (_properties != null) {
-                if (propList == null) {
-                    propList = new List<ClassTypePropertyMd>(_properties);
-                }
-                else {
-                    propList.AddRange(_properties);
-                }
-            }
-        }
-        public IEnumerable<ClassTypePropertyMd> GetPropertiesInHierarchy() {
-            if (BaseClass == null) {
-                return _properties;
-            }
-            if (_properties == null) {
-                return BaseClass.GetPropertiesInHierarchy();
-            }
-            List<ClassTypePropertyMd> propList = null;
-            GetPropertiesInHierarchy(ref propList);
-            return propList;
-        }
+        //public ClassTypePropertyMd GetPropertyInHierarchy(string name) {
+        //    var props = _properties;
+        //    if (props != null) {
+        //        var length = props.Length;
+        //        for (var i = 0; i < length; ++i) {
+        //            if (props[i].Name == name) {
+        //                return props[i];
+        //            }
+        //        }
+        //    }
+        //    if (BaseClass != null) {
+        //        return BaseClass.GetPropertyInHierarchy(name);
+        //    }
+        //    return null;
+        //}
+        //public void GetPropertiesInHierarchy(ref List<ClassTypePropertyMd> propList) {
+        //    if (BaseClass != null) {
+        //        BaseClass.GetPropertiesInHierarchy(ref propList);
+        //    }
+        //    if (_properties != null) {
+        //        if (propList == null) {
+        //            propList = new List<ClassTypePropertyMd>(_properties);
+        //        }
+        //        else {
+        //            propList.AddRange(_properties);
+        //        }
+        //    }
+        //}
+        //public IEnumerable<ClassTypePropertyMd> GetPropertiesInHierarchy() {
+        //    if (BaseClass == null) {
+        //        return _properties;
+        //    }
+        //    if (_properties == null) {
+        //        return BaseClass.GetPropertiesInHierarchy();
+        //    }
+        //    List<ClassTypePropertyMd> propList = null;
+        //    GetPropertiesInHierarchy(ref propList);
+        //    return propList;
+        //}
         public object CreateInstance() {
             //FormatterServices.GetUninitializedObject()
             return ClrConstructor.Invoke(null);
@@ -584,6 +619,11 @@ namespace SData {
             var md = this;
             for (; md.BaseClass != null; md = md.BaseClass) ;
             md.ClrTextSpanProperty.SetValue(obj, value);
+        }
+        public void SetUnknownProperties(object obj, Dictionary<string, object> value) {
+            var md = this;
+            for (; md.BaseClass != null; md = md.BaseClass) ;
+            md.ClrUnknownPropertiesProperty.SetValue(obj, value);
         }
         public bool InvokeOnLoad(bool isLoading, object obj, Context context) {
             if (BaseClass != null) {
@@ -601,13 +641,6 @@ namespace SData {
         }
     }
 
-    public struct NameValuePair222 {
-        public NameValuePair222(string name, object value) {
-            Name = name;
-            Value = value;
-        }
-        public readonly string Name;
-        public readonly object Value;
-    }
+
 
 }

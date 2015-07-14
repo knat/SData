@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SData {
+namespace SData.Internal {
     public enum TokenKind {
         Whitespace = -1000,
         NewLine,
@@ -148,7 +148,11 @@ namespace SData {
                 return TokenKind == TokenKind.Real;
             }
         }
-
+        public bool IsAtom {
+            get {
+                return IsString || IsBoolean || IsInteger || IsDecimal || IsReal || IsChar;
+            }
+        }
 
     }
 

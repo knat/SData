@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Text;
+using SData.Internal;
 
 namespace SData {
     internal static class AtomExtensions {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace SData {
+namespace SData.Internal {
     public static class ReflectionExtensions {
         public const string ThisMetadataNameStr = "__ThisMetadata";
         public const string MetadataNameStr = "__Metadata";

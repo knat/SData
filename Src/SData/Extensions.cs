@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using SData.Internal;
 
 namespace SData {
     public static class Extensions {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace SData {
+namespace SData.Internal {
     public static class StringBuilderBuffer {
         private const int _count = 4;
         [ThreadStatic]

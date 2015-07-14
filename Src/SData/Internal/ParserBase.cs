@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-namespace SData {
+namespace SData.Internal {
     //internal static class ParserKeywords {
     //    public const string AsKeyword = "as";
     //    public const string ImportKeyword = "import";
@@ -147,6 +147,13 @@ namespace SData {
             return kind == kind1 || kind == kind2 || kind == kind3 || kind == kind4;
         }
 
+        protected bool Token(int kind) {
+            if (GetToken().Kind == kind) {
+                ConsumeToken();
+                return true;
+            }
+            return false;
+        }
         protected bool Token(int kind, out Token result) {
             result = GetToken();
             if (result.Kind == kind) {
@@ -156,22 +163,29 @@ namespace SData {
             result = default(Token);
             return false;
         }
-        protected bool Token(int kind) {
-            if (GetToken().Kind == kind) {
-                ConsumeToken();
-                return true;
-            }
-            return false;
-        }
         protected void TokenExpected(char ch) {
             if (!Token(ch)) {
                 ErrorAndThrow(ch.ToString() + " expected.");
             }
         }
+        protected Token TokenExpectedEx(char ch) {
+            Token result;
+            if (!Token(ch, out result)) {
+                ErrorAndThrow(ch.ToString() + " expected.");
+            }
+            return result;
+        }
         protected void TokenExpected(int kind, string errMsg) {
             if (!Token(kind)) {
                 ErrorAndThrow(errMsg);
             }
+        }
+        protected Token TokenExpectedEx(int kind, string errMsg) {
+            Token result;
+            if (!Token(kind, out result)) {
+                ErrorAndThrow(errMsg);
+            }
+            return result;
         }
         protected void EndOfFileExpected() {
             TokenExpected(char.MaxValue, "End of file expected.");
@@ -208,6 +222,24 @@ namespace SData {
                 ErrorAndThrow("String expected.");
             }
             return result;
+        }
+        protected bool Null(out Token result) {
+            result = GetToken();
+            if (result.IsNull) {
+                ConsumeToken();
+                return true;
+            }
+            result = default(Token);
+            return false;
+        }
+        protected bool Atom(out Token result) {
+            result = GetToken();
+            if (result.IsAtom) {
+                ConsumeToken();
+                return true;
+            }
+            result = default(Token);
+            return false;
         }
 
 

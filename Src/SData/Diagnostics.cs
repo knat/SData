@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using SData.Internal;
 
 namespace SData {
     public enum DiagCode {
