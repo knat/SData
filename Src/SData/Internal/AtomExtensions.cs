@@ -2,28 +2,29 @@
 using System.Globalization;
 using System.Text;
 using SData.Internal;
+using System.Collections.Generic;
 
-namespace SData {
-    internal static class AtomExtensions {
-        internal const TypeKind AtomTypeStart = TypeKind.String;
-        internal const TypeKind AtomTypeEnd = TypeKind.DateTimeOffset;
-        internal static bool IsAtom(this TypeKind kind) {
+namespace SData.Internal {
+    public static class AtomExtensionsEx {
+        public const TypeKind AtomTypeStart = TypeKind.String;
+        public const TypeKind AtomTypeEnd = TypeKind.DateTimeOffset;
+        public static bool IsAtom(this TypeKind kind) {
             return kind >= AtomTypeStart && kind <= AtomTypeEnd;
         }
-        internal static bool IsSimple(this TypeKind kind) {
+        public static bool IsSimple(this TypeKind kind) {
             return IsAtom(kind) || kind == TypeKind.Enum;
         }
         //internal static bool IsClrEnum(this TypeKind kind) {
         //    return kind >= TypeKind.Int64 && kind <= TypeKind.Byte;
         //}
-        internal static bool IsClrRefAtom(this TypeKind kind) {
+        public static bool IsClrRefAtom(this TypeKind kind) {
             return kind == TypeKind.String || kind == TypeKind.IgnoreCaseString || kind == TypeKind.Binary;
         }
-        internal static FullName GetFullName(TypeKind kind) {
+        public static FullName GetFullName(TypeKind kind) {
             return new FullName(Extensions.SystemUri, kind.ToString());
         }
         //
-        internal static bool TryInvParse(this string s, out char result) {
+        public static bool TryInvParse(this string s, out char result) {
             if (s.Length == 1) {
                 result = s[0];
                 return true;
@@ -31,61 +32,61 @@ namespace SData {
             result = default(char);
             return false;
         }
-        internal static bool TryInvParse(this string s, out decimal result) {
+        public static bool TryInvParse(this string s, out decimal result) {
             return decimal.TryParse(s, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, NumberFormatInfo.InvariantInfo, out result);
         }
-        internal static string ToInvString(this decimal value) {
+        public static string ToInvString(this decimal value) {
             return value.ToString(CultureInfo.InvariantCulture);
         }
-        internal static bool TryInvParse(this string s, out long result) {
+        public static bool TryInvParse(this string s, out long result) {
             return long.TryParse(s, NumberStyles.AllowLeadingSign, NumberFormatInfo.InvariantInfo, out result);
         }
-        internal static string ToInvString(this long value) {
+        public static string ToInvString(this long value) {
             return value.ToString(CultureInfo.InvariantCulture);
         }
-        internal static bool TryInvParse(this string s, out int result) {
+        public static bool TryInvParse(this string s, out int result) {
             return int.TryParse(s, NumberStyles.AllowLeadingSign, NumberFormatInfo.InvariantInfo, out result);
         }
-        internal static string ToInvString(this int value) {
+        public static string ToInvString(this int value) {
             return value.ToString(CultureInfo.InvariantCulture);
         }
-        internal static bool TryInvParse(this string s, out short result) {
+        public static bool TryInvParse(this string s, out short result) {
             return short.TryParse(s, NumberStyles.AllowLeadingSign, NumberFormatInfo.InvariantInfo, out result);
         }
-        internal static string ToInvString(this short value) {
+        public static string ToInvString(this short value) {
             return value.ToString(CultureInfo.InvariantCulture);
         }
-        internal static bool TryInvParse(this string s, out sbyte result) {
+        public static bool TryInvParse(this string s, out sbyte result) {
             return sbyte.TryParse(s, NumberStyles.AllowLeadingSign, NumberFormatInfo.InvariantInfo, out result);
         }
-        internal static string ToInvString(this sbyte value) {
+        public static string ToInvString(this sbyte value) {
             return value.ToString(CultureInfo.InvariantCulture);
         }
-        internal static bool TryInvParse(this string s, out ulong result) {
+        public static bool TryInvParse(this string s, out ulong result) {
             return ulong.TryParse(s, NumberStyles.AllowLeadingSign, NumberFormatInfo.InvariantInfo, out result);
         }
-        internal static string ToInvString(this ulong value) {
+        public static string ToInvString(this ulong value) {
             return value.ToString(CultureInfo.InvariantCulture);
         }
-        internal static bool TryInvParse(this string s, out uint result) {
+        public static bool TryInvParse(this string s, out uint result) {
             return uint.TryParse(s, NumberStyles.AllowLeadingSign, NumberFormatInfo.InvariantInfo, out result);
         }
-        internal static string ToInvString(this uint value) {
+        public static string ToInvString(this uint value) {
             return value.ToString(CultureInfo.InvariantCulture);
         }
-        internal static bool TryInvParse(this string s, out ushort result) {
+        public static bool TryInvParse(this string s, out ushort result) {
             return ushort.TryParse(s, NumberStyles.AllowLeadingSign, NumberFormatInfo.InvariantInfo, out result);
         }
-        internal static string ToInvString(this ushort value) {
+        public static string ToInvString(this ushort value) {
             return value.ToString(CultureInfo.InvariantCulture);
         }
-        internal static bool TryInvParse(this string s, out byte result) {
+        public static bool TryInvParse(this string s, out byte result) {
             return byte.TryParse(s, NumberStyles.AllowLeadingSign, NumberFormatInfo.InvariantInfo, out result);
         }
-        internal static string ToInvString(this byte value) {
+        public static string ToInvString(this byte value) {
             return value.ToString(CultureInfo.InvariantCulture);
         }
-        internal static bool TryInvParse(this string s, out double result) {
+        public static bool TryInvParse(this string s, out double result) {
             if (s == "INF") {
                 result = double.PositiveInfinity;
             }
@@ -100,7 +101,7 @@ namespace SData {
             }
             return true;
         }
-        internal static string ToInvString(this double value, out bool isLiteral) {
+        public static string ToInvString(this double value, out bool isLiteral) {
             if (double.IsPositiveInfinity(value)) {
                 isLiteral = true;
                 return "INF";
@@ -116,7 +117,7 @@ namespace SData {
             isLiteral = false;
             return value.ToString(NumberFormatInfo.InvariantInfo);
         }
-        internal static bool TryInvParse(this string s, out float result) {
+        public static bool TryInvParse(this string s, out float result) {
             if (s == "INF") {
                 result = float.PositiveInfinity;
             }
@@ -131,7 +132,7 @@ namespace SData {
             }
             return true;
         }
-        internal static string ToInvString(this float value, out bool isLiteral) {
+        public static string ToInvString(this float value, out bool isLiteral) {
             if (float.IsPositiveInfinity(value)) {
                 isLiteral = true;
                 return "INF";
@@ -147,7 +148,7 @@ namespace SData {
             isLiteral = false;
             return value.ToString(NumberFormatInfo.InvariantInfo);
         }
-        internal static bool TryInvParse(this string s, out bool result) {
+        public static bool TryInvParse(this string s, out bool result) {
             if (s == "true") {
                 result = true;
             }
@@ -160,30 +161,30 @@ namespace SData {
             }
             return true;
         }
-        internal static string ToInvString(this bool value) {
+        public static string ToInvString(this bool value) {
             return value ? "true" : "false";
         }
-        internal static bool TryInvParse(this string s, out Guid result) {
+        public static bool TryInvParse(this string s, out Guid result) {
             return Guid.TryParseExact(s, "D", out result);
         }
-        internal static string ToInvString(this Guid value) {
+        public static string ToInvString(this Guid value) {
             return value.ToString("D");
         }
-        internal static bool TryInvParse(this string s, out TimeSpan result) {
+        public static bool TryInvParse(this string s, out TimeSpan result) {
             return TimeSpan.TryParseExact(s, "c", DateTimeFormatInfo.InvariantInfo, out result);
         }
-        internal static string ToInvString(this TimeSpan value) {
+        public static string ToInvString(this TimeSpan value) {
             return value.ToString("c");
         }
         private const string _dtoFormatString = "yyyy-MM-ddTHH:mm:ss.FFFFFFFzzz";
-        internal static bool TryInvParse(this string s, out DateTimeOffset result) {
+        public static bool TryInvParse(this string s, out DateTimeOffset result) {
             return DateTimeOffset.TryParseExact(s, _dtoFormatString, DateTimeFormatInfo.InvariantInfo, DateTimeStyles.None, out result);
         }
-        internal static string ToInvString(this DateTimeOffset value) {
+        public static string ToInvString(this DateTimeOffset value) {
             return value.ToString(_dtoFormatString, DateTimeFormatInfo.InvariantInfo);
         }
         //
-        internal static object TryParse(TypeKind typeKind, string s, bool isReadOnly = false) {
+        public static object TryParse(TypeKind typeKind, string s, bool isReadOnly = false) {
             switch (typeKind) {
                 case TypeKind.String:
                     return s;
@@ -316,7 +317,7 @@ namespace SData {
         }
         //
         //
-        internal static void GetLiteral(string value, StringBuilder sb) {
+        public static void GetLiteral(string value, StringBuilder sb) {
             var length = value.Length;
             if (length == 0) {
                 sb.Append("\"\"");
@@ -335,15 +336,44 @@ namespace SData {
                 sb.Append('"');
             }
         }
-        internal static string ToLiteral(this string value) {
+        public static string ToLiteral(this string value) {
             var sb = StringBuilderBuffer.Acquire();
             GetLiteral(value, sb);
             return sb.ToStringAndRelease();
         }
-        internal static void GetLiteral(char value, StringBuilder sb) {
+        public static void GetLiteral(char value, StringBuilder sb) {
             sb.Append(@"'\u");
             sb.Append(((int)value).ToString("X4", CultureInfo.InvariantCulture));
             sb.Append('\'');
+        }
+
+        private static readonly Dictionary<Type, TypeKind> _typeKindMap = new Dictionary<Type, TypeKind> {
+                { typeof(string), TypeKind.String },
+                { typeof(IgnoreCaseString), TypeKind.IgnoreCaseString },
+                { typeof(char), TypeKind.Char },
+                { typeof(decimal), TypeKind.Decimal },
+                { typeof(long), TypeKind.Int64 },
+                { typeof(int), TypeKind.Int32 },
+                { typeof(short), TypeKind.Int16 },
+                { typeof(sbyte), TypeKind.SByte },
+                { typeof(ulong), TypeKind.UInt64 },
+                { typeof(uint), TypeKind.UInt32 },
+                { typeof(ushort), TypeKind.UInt16 },
+                { typeof(byte), TypeKind.Byte },
+                { typeof(double), TypeKind.Double },
+                { typeof(float), TypeKind.Single },
+                { typeof(bool), TypeKind.Boolean },
+                { typeof(Binary), TypeKind.Binary },
+                { typeof(Guid), TypeKind.Guid },
+                { typeof(TimeSpan), TypeKind.TimeSpan },
+                { typeof(DateTimeOffset), TypeKind.DateTimeOffset },
+            };
+        public static TypeKind GetTypeKind(object value) {
+            TypeKind kind;
+            if (_typeKindMap.TryGetValue(value.GetType(), out kind)) {
+                return kind;
+            }
+            return TypeKind.None;
         }
 
     }

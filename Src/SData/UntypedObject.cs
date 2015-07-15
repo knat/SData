@@ -17,7 +17,7 @@ namespace SData {
         }
         public FullName? ClassFullName { get; set; }
         public Dictionary<string, object> Properties { get; set; }
-        public TextSpan __TextSpan { get; set; }
+        //public TextSpan __TextSpan { get; set; }
     }
     public class UntypedEnumMember {
         public UntypedEnumMember() { }

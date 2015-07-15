@@ -37,15 +37,20 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AtomExtensions.cs" />
+    <Compile Include="Internal\AtomExtensions.cs" />
     <Compile Include="Binary.cs" />
-    <Compile Include="Context.cs" />
+    <Compile Include="Internal\AliasUri.cs" />
+    <Compile Include="Internal\IndentedStringBuilder.cs" />
+    <Compile Include="LoadingContext.cs" />
     <Compile Include="Diagnostics.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="FullName.cs" />
     <Compile Include="IgnoreCaseString.cs" />
     <Compile Include="Internal\Lexer.cs" />
     <Compile Include="Metadata.cs" />
+    <Compile Include="ObjectSet.cs" />
+    <Compile Include="Internal\SavingContext.cs" />
+    <Compile Include="Serializer.cs" />
     <Compile Include="UntypedObject.cs" />
     <Compile Include="Internal\Parser.cs" />
     <Compile Include="Internal\ParserBase.cs" />

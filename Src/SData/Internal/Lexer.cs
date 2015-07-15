@@ -13,7 +13,7 @@ namespace SData.Internal {
         private static Lexer Instance {
             get { return _instance ?? (_instance = new Lexer()); }
         }
-        public static Lexer Get(string filePath, TextReader reader, Context context) {
+        public static Lexer Get(string filePath, TextReader reader, LoadingContext context) {
             return Instance.Set(filePath, reader, context);
         }
         private Lexer() {
@@ -22,7 +22,7 @@ namespace SData.Internal {
         //inputs
         private string _filePath;
         private TextReader _reader;
-        private Context _context;
+        private LoadingContext _context;
         //private IEnumerable<string> _ppSymbols;
         //private HashSet<string> _ppSymbolSet;
         //private HashSet<string> PpSymbolSet {
@@ -50,7 +50,7 @@ namespace SData.Internal {
         //}
         //private Token? _ppExprToken;
 
-        private Lexer Set(string filePath, TextReader reader, Context context) {
+        private Lexer Set(string filePath, TextReader reader, LoadingContext context) {
             if (filePath == null) throw new ArgumentNullException("filePath");
             if (reader == null) throw new ArgumentNullException("reader");
             if (context == null) throw new ArgumentNullException("context");
@@ -456,6 +456,18 @@ namespace SData.Internal {
                                 AdvanceChar();
                                 AdvanceChar();
                                 return CreateToken(TokenKind.ColonColon);
+                            }
+                            else {
+                                return CreateTokenAndAdvanceChar(ch);
+                            }
+                        }
+                        else if (ch == '#') {
+                            var nextch = GetNextChar();
+                            if (nextch == '[') {
+                                MarkTokenStart();
+                                AdvanceChar();
+                                AdvanceChar();
+                                return CreateToken(TokenKind.HashOpenBracket);
                             }
                             else {
                                 return CreateTokenAndAdvanceChar(ch);

@@ -40,6 +40,7 @@ namespace SData.Internal {
         //PercentEquals,// %=
         //QuestionQuestion,// ??
         ColonColon,// ::
+        HashOpenBracket,// #[
         //
         //HashHash,// ##
 

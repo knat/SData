@@ -5,7 +5,7 @@ namespace SData.Internal {
     public static class ReflectionExtensions {
         public const string ThisMetadataNameStr = "__ThisMetadata";
         public const string MetadataNameStr = "__Metadata";
-        public const string TextSpanNameStr = "__TextSpan";
+        //public const string TextSpanNameStr = "__TextSpan";
         public const string UnknownPropertiesNameStr = "__UnknownProperties";
         public const string OnLoadingNameStr = "OnLoading";
         public const string OnLoadedNameStr = "OnLoaded";

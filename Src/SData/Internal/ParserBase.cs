@@ -26,7 +26,7 @@ namespace SData.Internal {
             //_TypeSyntaxCreator = Type;
             //_ArrayRankSpecifierSyntaxCreator = ArrayRankSpecifier;
         }
-        protected void Set(string filePath, TextReader reader, Context context) {
+        protected void Set(string filePath, TextReader reader, LoadingContext context) {
             _lexer = Lexer.Get(filePath, reader, context);
             _tokenIndex = -1;
             _filePath = filePath;
@@ -46,7 +46,7 @@ namespace SData.Internal {
         private readonly Token[] _tokens;
         private int _tokenIndex;
         private string _filePath;
-        protected Context _context;
+        protected LoadingContext _context;
         //
         //protected delegate bool Creator<T>(out T item);//where T : SyntaxNode;
 
@@ -131,19 +131,19 @@ namespace SData.Internal {
                 Array.Copy(_tokens, 1, _tokens, 0, _tokenIndex + 1);
             }
         }
-        protected bool PeekToken(int tkIdx, int kind) {
-            return GetToken(tkIdx).Kind == kind;
+        protected bool PeekToken(int kind) {
+            return GetToken().Kind == kind;
         }
-        protected bool PeekToken(int tkIdx, int kind1, int kind2) {
-            var kind = GetToken(tkIdx).Kind;
+        protected bool PeekToken(int kind1, int kind2) {
+            var kind = GetToken().Kind;
             return kind == kind1 || kind == kind2;
         }
-        protected bool PeekToken(int tkIdx, int kind1, int kind2, int kind3) {
-            var kind = GetToken(tkIdx).Kind;
+        protected bool PeekToken(int kind1, int kind2, int kind3) {
+            var kind = GetToken().Kind;
             return kind == kind1 || kind == kind2 || kind == kind3;
         }
-        protected bool PeekToken(int tkIdx, int kind1, int kind2, int kind3, int kind4) {
-            var kind = GetToken(tkIdx).Kind;
+        protected bool PeekToken(int kind1, int kind2, int kind3, int kind4) {
+            var kind = GetToken().Kind;
             return kind == kind1 || kind == kind2 || kind == kind3 || kind == kind4;
         }
 

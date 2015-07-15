@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 
 namespace SData {
-    public class Context {
-        public Context() {
+    public class LoadingContext {
+        public LoadingContext() {
             DiagList = new List<Diag>();
             //_tokenList = new List<Token>();
         }
@@ -41,11 +41,11 @@ namespace SData {
             return false;
         }
         public struct Marker {
-            internal Marker(Context context) {
+            internal Marker(LoadingContext context) {
                 Context = context;
                 StartIndex = context.DiagList.Count;
             }
-            internal readonly Context Context;
+            internal readonly LoadingContext Context;
             public readonly int StartIndex;
             public int Count {
                 get {

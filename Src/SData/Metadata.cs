@@ -8,7 +8,7 @@ namespace SData {
     public abstract class AssemblyMd {
         private static readonly Dictionary<FullName, GlobalTypeMd> _globalTypeMap = new Dictionary<FullName, GlobalTypeMd>();
         //private static readonly HashSet<string> _uriSet = new HashSet<string>();
-        public static T GetGlobalType<T>(FullName fullName) where T : GlobalTypeMd {
+        public static T TryGetGlobalType<T>(FullName fullName) where T : GlobalTypeMd {
             GlobalTypeMd globalType;
             _globalTypeMap.TryGetValue(fullName, out globalType);
             return globalType as T;
@@ -61,6 +61,7 @@ namespace SData {
         SimpleSet = 73,
         ObjectSet = 74,
         Map = 75,
+        //MapItem = 76,
         //AnonymousClass = 76,
         //Void = 77,
 
@@ -81,22 +82,22 @@ namespace SData {
                 return Kind == TypeKind.Nullable;
             }
         }
-        public LocalTypeMd NonNullableType {
+        public NonNullableType NonNullableType {
             get {
-                var nt = this as NullableTypeMd;
-                if (nt != null) {
-                    return nt.ElementType;
+                var nnt = this as NonNullableType;
+                if (nnt != null) {
+                    return nnt;
                 }
-                return this;
+                return (this as NullableTypeMd).ElementType;
             }
         }
     }
     public sealed class NullableTypeMd : LocalTypeMd {
-        public NullableTypeMd(LocalTypeMd elementType)
+        public NullableTypeMd(NonNullableType elementType)
             : base(TypeKind.Nullable) {
             ElementType = elementType;
         }
-        public readonly LocalTypeMd ElementType;
+        public readonly NonNullableType ElementType;
     }
     //public sealed class AnonymousClassTypeMd : LocalTypeMd {
     //    public AnonymousClassTypeMd(AnonymousClassPropertyMd[] properties)
@@ -146,13 +147,34 @@ namespace SData {
     //}
 
     //for List, SimpleSet, ObjectSet, Map
-    public sealed class CollectionTypeMd : LocalTypeMd {
+
+    public abstract class NonNullableType : LocalTypeMd {
+        protected NonNullableType(TypeKind kind)
+            : base(kind) {
+        }
+        public T TryGetGlobalType<T>() where T : GlobalTypeMd {
+            var gtr = this as GlobalTypeRefMd;
+            if (gtr != null) {
+                return gtr.GlobalType as T;
+            }
+            return null;
+        }
+    }
+    //public sealed class MapItemTypeMd : NonNullableType {
+    //    public MapItemTypeMd(AtomTypeMd keyType, LocalTypeMd valueType)
+    //        : base(TypeKind.MapItem) {
+    //        KeyType = keyType;
+    //        ValueType = valueType;
+    //    }
+    //    public readonly AtomTypeMd KeyType;
+    //    public readonly LocalTypeMd ValueType;
+    //}
+    public sealed class CollectionTypeMd : NonNullableType {
         public CollectionTypeMd(TypeKind kind, LocalTypeMd itemOrValueType,
             GlobalTypeRefMd mapKeyType, object objectSetKeySelector, Type clrType)
             : base(kind) {
             ItemOrValueType = itemOrValueType;
             MapKeyType = mapKeyType;
-            //MapValueType = mapValueType;
             ObjectSetKeySelector = objectSetKeySelector;
             ClrType = clrType;
             var ti = clrType.GetTypeInfo();
@@ -168,7 +190,6 @@ namespace SData {
         }
         public readonly LocalTypeMd ItemOrValueType;
         public readonly GlobalTypeRefMd MapKeyType;//opt
-        //public readonly LocalTypeMd MapValueType;//opt
         public readonly object ObjectSetKeySelector;//opt
         public readonly Type ClrType;
         public readonly ConstructorInfo ClrConstructor;
@@ -199,7 +220,7 @@ namespace SData {
             return ClrGetEnumeratorMethod.Invoke(obj, null) as IDictionaryEnumerator;
         }
     }
-    public sealed class GlobalTypeRefMd : LocalTypeMd {
+    public sealed class GlobalTypeRefMd : NonNullableType {
         public GlobalTypeRefMd(GlobalTypeMd globalType)
             : base(globalType.Kind) {
             GlobalType = globalType;
@@ -254,95 +275,20 @@ namespace SData {
             { TypeKind.DateTimeOffset, new NullableTypeMd(_atomMap[TypeKind.DateTimeOffset]) },
         };
     }
+
     public abstract class GlobalTypeMd : TypeMd {
         protected GlobalTypeMd(TypeKind kind, FullName fullName)
             : base(kind) {
             FullName = fullName;
-            //_properties = properties;
-            //_functions = functions;
         }
         public readonly FullName FullName;
-        //protected PropertyMd[] _properties;//opt
-        //protected FunctionMd[] _functions;//opt
     }
-
-
-
-
-    //[Flags]
-    //public enum PropertyFlags {
-    //    None = 0,
-    //    Index = 1,
-    //    Static = 2,
-    //    ReadOnly = 4,
-    //    Extension = 8,
-    //}
-    //public class PropertyMd : NameTypePairMd {
-    //    public PropertyMd(string name, LocalTypeMd type, PropertyFlags flags, ParameterMd[] parameters = null)
-    //        : base(name, type) {
-    //        Flags = flags;
-    //        _parameters = parameters;
-    //    }
-    //    public readonly PropertyFlags Flags;
-    //    private readonly ParameterMd[] _parameters;//opt
-    //    public bool IsIndex {
-    //        get { return (Flags & PropertyFlags.Index) == PropertyFlags.Index; }
-    //    }
-    //    public bool IsStatic {
-    //        get { return (Flags & PropertyFlags.Static) == PropertyFlags.Static; }
-    //    }
-    //    public bool IsReadOnly {
-    //        get { return (Flags & PropertyFlags.ReadOnly) == PropertyFlags.ReadOnly; }
-    //    }
-    //    public int ParameterCount {
-    //        get { return _parameters == null ? 0 : _parameters.Length; }
-    //    }
-
-    //}
-
-    //public sealed class ParameterMd : NameTypePairMd {
-    //    public ParameterMd(string name, LocalTypeMd type)
-    //        : base(name, type) {
-    //    }
-    //}
-
-
-    //[Flags]
-    //public enum FunctionFlags {
-    //    None = 0,
-    //    Idempotent = 1,
-    //    Safe = Idempotent | 2,
-    //    Static = 4,
-    //    Extension = 8,
-    //}
-
-    //public sealed class FunctionMd {
-    //    public FunctionMd(string name, FunctionFlags flags, LocalTypeMd returnType, ParameterMd[] parameters) {
-    //        Name = name;
-    //        Flags = flags;
-    //        ReturnType = returnType;
-    //        _parameters = parameters;
-    //    }
-    //    public readonly string Name;
-    //    public readonly FunctionFlags Flags;
-    //    public readonly LocalTypeMd ReturnType;
-    //    private readonly ParameterMd[] _parameters;//opt
-    //    public bool IsIdempotent {
-    //        get { return (Flags & FunctionFlags.Idempotent) == FunctionFlags.Idempotent; }
-    //    }
-    //    public bool IsSafe {
-    //        get { return (Flags & FunctionFlags.Safe) == FunctionFlags.Safe; }
-    //    }
-    //    public bool IsStatic {
-    //        get { return (Flags & FunctionFlags.Static) == FunctionFlags.Static; }
-    //    }
-    //    public int ParameterCount {
-    //        get { return _parameters == null ? 0 : _parameters.Length; }
-    //    }
-
-    //}
-
-    public sealed class AtomTypeMd : GlobalTypeMd {
+    public abstract class SimpleTypeMd : GlobalTypeMd {
+        protected SimpleTypeMd(TypeKind kind, FullName fullName)
+            : base(kind, fullName) {
+        }
+    }
+    public sealed class AtomTypeMd : SimpleTypeMd {
         public static AtomTypeMd Get(TypeKind kind) {
             return _map[kind];
         }
@@ -361,7 +307,7 @@ namespace SData {
             return TypeKind.None;
         }
         private AtomTypeMd(TypeKind kind)
-            : base(kind, AtomExtensions.GetFullName(kind)) {
+            : base(kind, AtomExtensionsEx.GetFullName(kind)) {
         }
         private static readonly Dictionary<string, TypeKind> _nameMap = new Dictionary<string, TypeKind> {
                 { TypeKind.String.ToString(), TypeKind.String },
@@ -407,31 +353,29 @@ namespace SData {
             };
 
     }
-    //public abstract class NamedTypePairMd {
-    //    protected NamedTypePairMd(string name, LocalTypeMd type) {
-    //        Name = name;
-    //        Type = type;
-    //    }
-    //    public readonly string Name;
-    //    public readonly LocalTypeMd Type;
-    //}
-
-    public struct EnumTypeMemberMd {
-        public EnumTypeMemberMd(string name, object value) {
-            Name = name;
-            Value = value;
-        }
-        public readonly string Name;
-        public readonly object Value;
-    }
-    public sealed class EnumTypeMd : GlobalTypeMd {
-        public EnumTypeMd(FullName fullName, AtomTypeMd underlyingType, EnumTypeMemberMd[] members)
+    public sealed class EnumTypeMd : SimpleTypeMd {
+        public EnumTypeMd(FullName fullName, AtomTypeMd underlyingType, Dictionary<string, object> members)
             : base(TypeKind.Enum, fullName) {
             UnderlyingType = underlyingType;
-            _members = members;
+            _members = members ?? _emptyMembers;
         }
         public readonly AtomTypeMd UnderlyingType;
-        private readonly EnumTypeMemberMd[] _members;
+        private static readonly Dictionary<string, object> _emptyMembers = new Dictionary<string, object>(0);
+        internal readonly Dictionary<string, object> _members;
+        public IReadOnlyDictionary<string, object> Members {
+            get {
+                return _members;
+            }
+        }
+        public string TryGetMemberName(object value) {
+            foreach (var kv in _members) {
+                if (value.Equals(kv.Value)) {
+                    return kv.Key;
+                }
+            }
+            return null;
+        }
+        //private readonly EnumTypeMemberMd[] _members;
         //public EnumTypeMemberMd GetProperty(string name) {
         //    var props = _members;
         //    if (props != null) {
@@ -451,57 +395,19 @@ namespace SData {
         //    }
         //    return null;
         //}
-        public string GetPropertyName(object value) {
-            var props = _members;
-            if (props != null) {
-                var length = props.Length;
-                for (var i = 0; i < length; ++i) {
-                    if (props[i].Value.Equals(value)) {
-                        return props[i].Name;
-                    }
-                }
-            }
-            return null;
-        }
+        //public string GetPropertyName(object value) {
+        //    var props = _members;
+        //    if (props != null) {
+        //        var length = props.Length;
+        //        for (var i = 0; i < length; ++i) {
+        //            if (props[i].Value.Equals(value)) {
+        //                return props[i].Name;
+        //            }
+        //        }
+        //    }
+        //    return null;
+        //}
 
-    }
-    public sealed class ClassTypePropertyMd {
-        public ClassTypePropertyMd(string name, LocalTypeMd type, string clrName, bool isClrProperty) {
-            Name = name;
-            Type = type;
-            ClrName = clrName;
-            IsClrProperty = isClrProperty;
-        }
-        public readonly string Name;
-        public readonly LocalTypeMd Type;
-        public readonly string ClrName;
-        public readonly bool IsClrProperty;
-        public PropertyInfo ClrProperty { get; private set; }
-        public FieldInfo ClrField { get; private set; }
-        internal void GetClrPropertyOrField(TypeInfo ti) {
-            if (IsClrProperty) {
-                ClrProperty = ReflectionExtensions.GetProperty(ti, ClrName);
-            }
-            else {
-                ClrField = ReflectionExtensions.GetField(ti, ClrName);
-            }
-        }
-        public object GetValue(object obj) {
-            if (IsClrProperty) {
-                return ClrProperty.GetValue(obj);
-            }
-            else {
-                return ClrField.GetValue(obj);
-            }
-        }
-        public void SetValue(object obj, object value) {
-            if (IsClrProperty) {
-                ClrProperty.SetValue(obj, value);
-            }
-            else {
-                ClrField.SetValue(obj, value);
-            }
-        }
     }
 
     public sealed class ClassTypeMd : GlobalTypeMd {
@@ -523,7 +429,7 @@ namespace SData {
             }
             if (baseClass == null) {
                 ClrMetadataProperty = ReflectionExtensions.GetProperty(ti, ReflectionExtensions.MetadataNameStr);
-                ClrTextSpanProperty = ReflectionExtensions.GetProperty(ti, ReflectionExtensions.TextSpanNameStr);
+                //ClrTextSpanProperty = ReflectionExtensions.GetProperty(ti, ReflectionExtensions.TextSpanNameStr);
                 ClrUnknownPropertiesProperty = ReflectionExtensions.GetProperty(ti, ReflectionExtensions.UnknownPropertiesNameStr);
                 _propertyMap = thisPropertyMap ?? _emptyPropertyMap;
             }
@@ -555,7 +461,7 @@ namespace SData {
         public readonly Type ClrType;
         public readonly ConstructorInfo ClrConstructor;//for non abstract class
         public readonly PropertyInfo ClrMetadataProperty;//for top class
-        public readonly PropertyInfo ClrTextSpanProperty;//for top class
+        //public readonly PropertyInfo ClrTextSpanProperty;//for top class
         public readonly PropertyInfo ClrUnknownPropertiesProperty;//for top class
         public readonly MethodInfo ClrOnLoadingMethod;//opt
         public readonly MethodInfo ClrOnLoadedMethod;//opt
@@ -615,25 +521,30 @@ namespace SData {
             for (; md.BaseClass != null; md = md.BaseClass) ;
             return (ClassTypeMd)md.ClrMetadataProperty.GetValue(obj);
         }
-        public void SetTextSpan(object obj, TextSpan value) {
-            var md = this;
-            for (; md.BaseClass != null; md = md.BaseClass) ;
-            md.ClrTextSpanProperty.SetValue(obj, value);
-        }
+        //public void SetTextSpan(object obj, TextSpan value) {
+        //    var md = this;
+        //    for (; md.BaseClass != null; md = md.BaseClass) ;
+        //    md.ClrTextSpanProperty.SetValue(obj, value);
+        //}
         public void SetUnknownProperties(object obj, Dictionary<string, object> value) {
             var md = this;
             for (; md.BaseClass != null; md = md.BaseClass) ;
             md.ClrUnknownPropertiesProperty.SetValue(obj, value);
         }
-        public bool InvokeOnLoad(bool isLoading, object obj, Context context) {
+        public Dictionary<string, object> GetUnknownProperties(object obj) {
+            var md = this;
+            for (; md.BaseClass != null; md = md.BaseClass) ;
+            return (Dictionary<string, object>)md.ClrUnknownPropertiesProperty.GetValue(obj);
+        }
+        public bool InvokeOnLoad(bool isLoading, object obj, LoadingContext context, TextSpan textSpan) {
             if (BaseClass != null) {
-                if (!BaseClass.InvokeOnLoad(isLoading, obj, context)) {
+                if (!BaseClass.InvokeOnLoad(isLoading, obj, context, textSpan)) {
                     return false;
                 }
             }
             var mi = isLoading ? ClrOnLoadingMethod : ClrOnLoadedMethod;
             if (mi != null) {
-                if (!(bool)mi.Invoke(obj, new object[] { context })) {
+                if (!(bool)mi.Invoke(obj, new object[] { context, textSpan })) {
                     return false;
                 }
             }
@@ -641,6 +552,44 @@ namespace SData {
         }
     }
 
+    public sealed class ClassTypePropertyMd {
+        public ClassTypePropertyMd(string name, LocalTypeMd type, string clrName, bool isClrProperty) {
+            Name = name;
+            Type = type;
+            ClrName = clrName;
+            IsClrProperty = isClrProperty;
+        }
+        public readonly string Name;
+        public readonly LocalTypeMd Type;
+        public readonly string ClrName;
+        public readonly bool IsClrProperty;
+        public PropertyInfo ClrProperty { get; private set; }
+        public FieldInfo ClrField { get; private set; }
+        internal void GetClrPropertyOrField(TypeInfo ti) {
+            if (IsClrProperty) {
+                ClrProperty = ReflectionExtensions.GetProperty(ti, ClrName);
+            }
+            else {
+                ClrField = ReflectionExtensions.GetField(ti, ClrName);
+            }
+        }
+        public object GetValue(object obj) {
+            if (IsClrProperty) {
+                return ClrProperty.GetValue(obj);
+            }
+            else {
+                return ClrField.GetValue(obj);
+            }
+        }
+        public void SetValue(object obj, object value) {
+            if (IsClrProperty) {
+                ClrProperty.SetValue(obj, value);
+            }
+            else {
+                ClrField.SetValue(obj, value);
+            }
+        }
+    }
 
 
 }
