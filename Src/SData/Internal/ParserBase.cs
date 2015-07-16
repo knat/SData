@@ -4,27 +4,10 @@ using System.Diagnostics;
 using System.IO;
 
 namespace SData.Internal {
-    //internal static class ParserKeywords {
-    //    public const string AsKeyword = "as";
-    //    public const string ImportKeyword = "import";
-    //    //public const string IsKeyword = "is";
-    //    //public const string NewKeyword = "new";
-    //    //public const string ThisKeyword = "this";
-    //}
-    public sealed class ParsingException : Exception {
-        private ParsingException() {
-        }
-        internal static readonly ParsingException Instance = new ParsingException();
-    }
 
     public abstract class ParserBase {
         protected ParserBase() {
             _tokens = new Token[_tokenBufLength];
-            //
-            //_ExternAliasDirectiveSyntaxCreator = ExternAliasDirective;
-            //_ExpressionSyntaxCreator = Expression;
-            //_TypeSyntaxCreator = Type;
-            //_ArrayRankSpecifierSyntaxCreator = ArrayRankSpecifier;
         }
         protected void Set(string filePath, TextReader reader, LoadingContext context) {
             _lexer = Lexer.Get(filePath, reader, context);
@@ -32,7 +15,6 @@ namespace SData.Internal {
             _filePath = filePath;
             _context = context;
             //
-            //_allowArrayRankSpecifierExprs = false;
         }
         protected void Clear() {
             if (_lexer != null) {
@@ -48,30 +30,18 @@ namespace SData.Internal {
         private string _filePath;
         protected LoadingContext _context;
         //
-        //protected delegate bool Creator<T>(out T item);//where T : SyntaxNode;
-
-        //protected readonly Creator<ExternAliasDirectiveSyntax> _ExternAliasDirectiveSyntaxCreator;
-
-        //protected readonly Creator<ExpressionSyntax> _ExpressionSyntaxCreator;
-        //protected readonly Creator<TypeSyntax> _TypeSyntaxCreator;
-        //protected readonly Creator<ArrayRankSpecifierSyntax> _ArrayRankSpecifierSyntaxCreator;
-
-        //protected static readonly Func<OmittedArraySizeExpressionSyntax> _OmittedArraySizeExpressionSyntaxCreator = SyntaxFactory.OmittedArraySizeExpression;
-        //protected static readonly Func<OmittedTypeArgumentSyntax> _OmittedTypeArgumentSyntaxCreator = SyntaxFactory.OmittedTypeArgument;
-
-
         //
         protected void Error(int code, string errMsg, TextSpan textSpan) {
-            _context.AddDiag(DiagSeverity.Error, code, errMsg, textSpan);
+            _context.AddDiagnostic(DiagnosticSeverity.Error, code, errMsg, textSpan);
         }
         protected void Error(DiagMsg diagMsg, TextSpan textSpan) {
-            _context.AddDiag(DiagSeverity.Error, diagMsg, textSpan);
+            Error((int)diagMsg.Code, diagMsg.GetMessage(), textSpan);
         }
         protected void Throw() {
-            throw ParsingException.Instance;
+            throw LoadingException.Instance;
         }
         protected void ErrorAndThrow(string errMsg, TextSpan textSpan) {
-            Error((int)DiagCode.Parsing, errMsg, textSpan);
+            Error((int)DiagnosticCode.Parsing, errMsg, textSpan);
             Throw();
         }
         protected void ErrorAndThrow(string errMsg) {
@@ -207,6 +177,27 @@ namespace SData.Internal {
             }
             return result;
         }
+        protected bool Keyword(string value) {
+            if (GetToken().IsKeyword(value)) {
+                ConsumeToken();
+                return true;
+            }
+            return false;
+        }
+        protected void KeywordExpected(string value) {
+            if (!Keyword(value)) {
+                ErrorAndThrow(value + " expetced.");
+            }
+        }
+        protected bool Keyword(string value, out Token result) {
+            result = GetToken();
+            if (result.IsKeyword(value)) {
+                ConsumeToken();
+                return true;
+            }
+            result = default(Token);
+            return false;
+        }
         protected bool String(out Token result) {
             result = GetToken();
             if (result.IsString) {
@@ -240,6 +231,13 @@ namespace SData.Internal {
             }
             result = default(Token);
             return false;
+        }
+        protected Token AtomExpected() {
+            Token result;
+            if (!Atom(out result)) {
+                ErrorAndThrow("Atom value expected.");
+            }
+            return result;
         }
 
 

@@ -37,10 +37,13 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes.cs" />
     <Compile Include="Internal\AtomExtensions.cs" />
     <Compile Include="Binary.cs" />
     <Compile Include="Internal\AliasUri.cs" />
+    <Compile Include="Internal\DiagMsg.cs" />
     <Compile Include="Internal\IndentedStringBuilder.cs" />
+    <Compile Include="Internal\LoadingException.cs" />
     <Compile Include="LoadingContext.cs" />
     <Compile Include="Diagnostics.cs" />
     <Compile Include="Extensions.cs" />

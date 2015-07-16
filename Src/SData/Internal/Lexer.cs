@@ -151,8 +151,8 @@ namespace SData.Internal {
             return token;
         }
         private void ErrorAndThrow(string errMsg, TextSpan textSpan) {
-            _context.AddDiag(DiagSeverity.Error, (int)DiagCode.Parsing, errMsg, textSpan);
-            throw ParsingException.Instance;
+            _context.AddDiagnostic(DiagnosticSeverity.Error, (int)DiagnosticCode.Parsing, errMsg, textSpan);
+            throw LoadingException.Instance;
         }
         private void ErrorAndThrow(string errMsg) {
             ErrorAndThrow(errMsg, CreateTextSpan());

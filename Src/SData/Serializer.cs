@@ -101,7 +101,7 @@ namespace SData {
                     SaveClassValue(false, value, null, context);
                 }
                 else {
-                    var uem = value as UntypedEnumMember;
+                    var uem = value as UntypedEnumValue;
                     if (uem != null) {
                         context.AppendFullName(uem.EnumFullName);
                         sb.Append('.');

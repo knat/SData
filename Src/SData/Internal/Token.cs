@@ -45,7 +45,7 @@ namespace SData.Internal {
         //HashHash,// ##
 
     }
-    public struct Token {
+    public struct Token : IEquatable<Token> {
         public Token(int kind, string value, TextSpan textSpan) {
             Kind = kind;
             Value = value;
@@ -57,6 +57,11 @@ namespace SData.Internal {
         public TokenKind TokenKind {
             get {
                 return (TokenKind)Kind;
+            }
+        }
+        public bool IsValid {
+            get {
+                return TextSpan.IsValid;
             }
         }
         //public bool IsWhitespace {
@@ -94,19 +99,22 @@ namespace SData.Internal {
                 return IsNormalIdentifier || IsVerbatimIdentifier;
             }
         }
+        public bool IsKeyword(string value) {
+            return IsNormalIdentifier && Value == value;
+        }
         public bool IsNull {
             get {
-                return IsNormalIdentifier && Value == "null";
+                return IsKeyword("null");
             }
         }
         public bool IsTrue {
             get {
-                return IsNormalIdentifier && Value == "true";
+                return IsKeyword("true");
             }
         }
         public bool IsFlase {
             get {
-                return IsNormalIdentifier && Value == "false";
+                return IsKeyword("false");
             }
         }
         public bool IsBoolean {
@@ -153,6 +161,25 @@ namespace SData.Internal {
             get {
                 return IsString || IsBoolean || IsInteger || IsDecimal || IsReal || IsChar;
             }
+        }
+        //
+        public override string ToString() {
+            return Value;
+        }
+        public bool Equals(Token other) {
+            return Value == other.Value;
+        }
+        public override bool Equals(object obj) {
+            return obj is Token && Equals((Token)obj);
+        }
+        public override int GetHashCode() {
+            return Value != null ? Value.GetHashCode() : 0;
+        }
+        public static bool operator ==(Token left, Token right) {
+            return left.Equals(right);
+        }
+        public static bool operator !=(Token left, Token right) {
+            return !left.Equals(right);
         }
 
     }

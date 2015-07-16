@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
 
 namespace SData {
-    //public struct NameValuePair {
-    //    public NameValuePair(string name, object value) {
-    //        Name = name;
-    //        Value = value;
-    //    }
-    //    public readonly string Name;
-    //    public readonly object Value;
-    //}
+    public struct NameValuePair {
+        public NameValuePair(string name, object value) {
+            Name = name;
+            Value = value;
+        }
+        public readonly string Name;
+        public readonly object Value;
+    }
     public class UntypedObject {
         public UntypedObject() { }
         public UntypedObject(FullName? classFullName, Dictionary<string, object> properties) {
@@ -19,9 +19,9 @@ namespace SData {
         public Dictionary<string, object> Properties { get; set; }
         //public TextSpan __TextSpan { get; set; }
     }
-    public class UntypedEnumMember {
-        public UntypedEnumMember() { }
-        public UntypedEnumMember(FullName enumFullName, string memberName) {
+    public class UntypedEnumValue {
+        public UntypedEnumValue() { }
+        public UntypedEnumValue(FullName enumFullName, string memberName) {
             EnumFullName = enumFullName;
             MemberName = memberName;
         }

@@ -1,37 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
+using SData.Internal;
 
 namespace SData {
     public class LoadingContext {
         public LoadingContext() {
-            DiagList = new List<Diag>();
-            //_tokenList = new List<Token>();
+            DiagnosticList = new List<Diagnostic>();
         }
-        public readonly List<Diag> DiagList;
-        //private readonly List<Token> _tokenList;
+        public readonly List<Diagnostic> DiagnosticList;
         public virtual void Reset() {
-            DiagList.Clear();
-            //_tokenList.Clear();
+            DiagnosticList.Clear();
         }
-
-        public void AddDiag(DiagSeverity severity, int code, string message, TextSpan textSpan) {
-            DiagList.Add(new Diag(severity, code, message, textSpan));
+        public void AddDiagnostic(DiagnosticSeverity severity, int code, string message, TextSpan textSpan) {
+            DiagnosticList.Add(new Diagnostic(severity, code, message, textSpan));
         }
-        public void AddDiag(DiagSeverity severity, DiagMsg diagMsg, TextSpan textSpan) {
-            DiagList.Add(new Diag(severity, diagMsg, textSpan));
-        }
-        public bool HasDiags {
+        public bool HasDiagnostics {
             get {
-                return DiagList.Count > 0;
+                return DiagnosticList.Count > 0;
             }
         }
-        public bool HasErrorDiags {
+        public bool HasErrorDiagnostics {
             get {
-                return HasErrorDiagsCore(0);
+                return HasErrorDiagnosticsCore(0);
             }
         }
-        private bool HasErrorDiagsCore(int startIndex) {
-            var list = DiagList;
+        private bool HasErrorDiagnosticsCore(int startIndex) {
+            var list = DiagnosticList;
             var count = list.Count;
             for (; startIndex < count; ++startIndex) {
                 if (list[startIndex].IsError) {
@@ -43,34 +37,27 @@ namespace SData {
         public struct Marker {
             internal Marker(LoadingContext context) {
                 Context = context;
-                StartIndex = context.DiagList.Count;
+                StartIndex = context.DiagnosticList.Count;
             }
             internal readonly LoadingContext Context;
             public readonly int StartIndex;
             public int Count {
                 get {
-                    return Context.DiagList.Count - StartIndex;
+                    return Context.DiagnosticList.Count - StartIndex;
                 }
             }
-            public bool HasErrorDiags {
+            public bool HasErrorDiagnostics {
                 get {
-                    return Context.HasErrorDiagsCore(StartIndex);
+                    return Context.HasErrorDiagnosticsCore(StartIndex);
                 }
             }
             public void Restore() {
-                Context.DiagList.RemoveRange(StartIndex, Context.DiagList.Count - StartIndex);
+                Context.DiagnosticList.RemoveRange(StartIndex, Context.DiagnosticList.Count - StartIndex);
             }
         }
         public Marker Mark() {
             return new Marker(this);
         }
-        //
-        //internal string AddToken(Token token) {
-        //    var list = _tokenList;
-        //    var idxStr = list.Count.ToInvString();
-        //    list.Add(token);
-        //    return idxStr;
-        //}
 
     }
 

@@ -35,7 +35,7 @@ namespace SData.Internal {
                     ErrorAndThrow("Class value expected.");
                 }
             }
-            catch (ParsingException) { }
+            catch (LoadingException) { }
             finally {
                 Clear();
             }
@@ -45,45 +45,6 @@ namespace SData.Internal {
 
 
 
-        //private bool AliasUriList() {
-        //    if (Token('<')) {
-        //        List<AliasUri> list = null;
-        //        while (true) {
-        //            Token aliasToken;
-        //            if (Identifier(out aliasToken)) {
-        //                var alias = aliasToken.Value;
-        //                //if (alias == "sys") {
-
-        //                //}
-        //                if (list == null) {
-        //                    list = new List<AliasUri>();
-        //                }
-        //                else {
-        //                    foreach (var item in list) {
-        //                        if (item.Alias == alias) {
-        //                            ErrorAndThrow(new DiagMsg(DiagCode.DuplicateAlias, alias), aliasToken.TextSpan);
-        //                        }
-        //                    }
-        //                }
-        //                TokenExpected('=');
-        //                list.Add(new AliasUri(StringExpected().Value, alias));
-        //                if (!Token(',')) {
-        //                    break;
-        //                }
-        //            }
-        //            else {
-        //                break;
-        //            }
-        //        }
-        //        TokenExpected('>');
-        //        if (list != null) {
-        //            _aliasUriListStack.Push(list);
-        //            return true;
-        //        }
-        //        return false;
-        //    }
-        //    return false;
-        //}
         private string GetUri(Token aliasToken) {
             var alias = aliasToken.Value;
             //if (alias == "sys") {
@@ -96,20 +57,9 @@ namespace SData.Internal {
                     }
                 }
             }
-            ErrorAndThrow(new DiagMsg(DiagCode.InvalidUriReference, alias), aliasToken.TextSpan);
+            ErrorAndThrow(new DiagMsg(DiagnosticCode.InvalidUriReference, alias), aliasToken.TextSpan);
             return null;
         }
-        //private bool FullName(out FullName result) {
-        //    Token aliasToken;
-        //    if (Identifier(out aliasToken)) {
-        //        var uri = GetUri(aliasToken);
-        //        TokenExpected((int)TokenKind.ColonColon, ":: expected.");
-        //        result = new FullName(uri, IdentifierExpected().Value);
-        //        return true;
-        //    }
-        //    result = default(FullName);
-        //    return false;
-        //}
         private bool ClassValue(ClassTypeMd declaredClsMd, out object result, out TextSpan textSpan) {
             var hasAliasUriList = false;
             if (Token('<')) {
@@ -126,7 +76,7 @@ namespace SData.Internal {
                         else {
                             foreach (var item in list) {
                                 if (item.Alias == alias) {
-                                    ErrorAndThrow(new DiagMsg(DiagCode.DuplicateAlias, alias), aliasToken.TextSpan);
+                                    ErrorAndThrow(new DiagMsg(DiagnosticCode.DuplicateUriAlias, alias), aliasToken.TextSpan);
                                 }
                             }
                         }
@@ -164,10 +114,10 @@ namespace SData.Internal {
                 if (declaredClsMd != null) {
                     clsMd = AssemblyMd.TryGetGlobalType<ClassTypeMd>(fullName);
                     if (clsMd == null) {
-                        ErrorAndThrow(new DiagMsg(DiagCode.InvalidClassReference, fullName.ToString()), textSpan);
+                        ErrorAndThrow(new DiagMsg(DiagnosticCode.InvalidClassReference, fullName.ToString()), textSpan);
                     }
                     if (!clsMd.IsEqualToOrDeriveFrom(declaredClsMd)) {
-                        ErrorAndThrow(new DiagMsg(DiagCode.ClassNotEqualToOrDeriveFromTheDeclared, fullName.ToString(), declaredClsMd.FullName.ToString()),
+                        ErrorAndThrow(new DiagMsg(DiagnosticCode.ClassNotEqualToOrDeriveFromTheDeclared, fullName.ToString(), declaredClsMd.FullName.ToString()),
                             textSpan);
                     }
                 }
@@ -181,7 +131,7 @@ namespace SData.Internal {
                         textSpan = openBraceToken.TextSpan;
                     }
                     if (clsMd.IsAbstract) {
-                        ErrorAndThrow(new DiagMsg(DiagCode.ClassIsAbstract, fullName.ToString()), textSpan);
+                        ErrorAndThrow(new DiagMsg(DiagnosticCode.ClassIsAbstract, fullName.ToString()), textSpan);
                     }
                     var obj = clsMd.CreateInstance();
                     //clsMd.SetTextSpan(obj, clsNameTS);
@@ -199,7 +149,7 @@ namespace SData.Internal {
                                 propNameSet = new HashSet<string>();
                             }
                             else if (propNameSet.Contains(propName)) {
-                                ErrorAndThrow(new DiagMsg(DiagCode.DuplicateAlias, propName), propNameToken.TextSpan);
+                                ErrorAndThrow(new DiagMsg(DiagnosticCode.DuplicateUriAlias, propName), propNameToken.TextSpan);
                             }
                             propNameSet.Add(propName);
                             TokenExpected('=');
@@ -226,7 +176,7 @@ namespace SData.Internal {
                         var needThrow = false;
                         foreach (var propMd in propMdMap.Values) {
                             if (!propMd.Type.IsNullable && (propNameSet == null || !propNameSet.Contains(propMd.Name))) {
-                                Error(new DiagMsg(DiagCode.PropertyMissing, propMd.Name), closeBraceToken.TextSpan);
+                                Error(new DiagMsg(DiagnosticCode.PropertyMissing, propMd.Name), closeBraceToken.TextSpan);
                                 needThrow = true;
                             }
                         }
@@ -252,7 +202,7 @@ namespace SData.Internal {
                                 propMap = new Dictionary<string, object>();
                             }
                             else if (propMap.ContainsKey(propName)) {
-                                ErrorAndThrow(new DiagMsg(DiagCode.DuplicateAlias, propName), propNameToken.TextSpan);
+                                ErrorAndThrow(new DiagMsg(DiagnosticCode.DuplicateUriAlias, propName), propNameToken.TextSpan);
                             }
                             TokenExpected('=');
                             propMap.Add(propName, LocalValueExpected(null));
@@ -282,7 +232,7 @@ namespace SData.Internal {
             object value;
             TextSpan textSpan;
             if (!LocalValue(typeMd, out value, out textSpan)) {
-                ErrorAndThrow(new DiagMsg(DiagCode.ValueExpected));
+                ErrorAndThrow(new DiagMsg(DiagnosticCode.ValueExpected));
             }
             return value;
         }
@@ -290,7 +240,7 @@ namespace SData.Internal {
             Token token;
             if (Null(out token)) {
                 if (typeMd != null && !typeMd.IsNullable) {
-                    ErrorAndThrow(new DiagMsg(DiagCode.NullNotAllowed), token.TextSpan);
+                    ErrorAndThrow(new DiagMsg(DiagnosticCode.NullNotAllowed), token.TextSpan);
                 }
                 result = null;
                 textSpan = token.TextSpan;
@@ -305,12 +255,12 @@ namespace SData.Internal {
                             typeKind = nonNullableTypeMd.TryGetGlobalType<EnumTypeMd>().UnderlyingType.Kind;
                         }
                         else {
-                            ErrorAndThrow(new DiagMsg(DiagCode.SpecificValueExpected, typeKind.ToString()), token.TextSpan);
+                            ErrorAndThrow(new DiagMsg(DiagnosticCode.SpecificValueExpected, typeKind.ToString()), token.TextSpan);
                         }
                     }
                     result = AtomExtensionsEx.TryParse(typeKind, token.Value);
                     if (result == null) {
-                        ErrorAndThrow(new DiagMsg(DiagCode.InvalidAtomValue, typeKind.ToString(), token.Value), token.TextSpan);
+                        ErrorAndThrow(new DiagMsg(DiagnosticCode.InvalidAtomValue, typeKind.ToString(), token.Value), token.TextSpan);
                     }
                 }
                 else {
@@ -324,7 +274,7 @@ namespace SData.Internal {
                     var nonNullableTypeMd = typeMd.NonNullableType;
                     var typeKind = nonNullableTypeMd.Kind;
                     if (typeKind != TypeKind.Class) {
-                        ErrorAndThrow(new DiagMsg(DiagCode.SpecificValueExpected, typeKind.ToString()));
+                        ErrorAndThrow(new DiagMsg(DiagnosticCode.SpecificValueExpected, typeKind.ToString()));
                     }
                     return ClassValue(nonNullableTypeMd.TryGetGlobalType<ClassTypeMd>(), out result, out textSpan);
                 }
@@ -341,15 +291,15 @@ namespace SData.Internal {
                     var nonNullableTypeMd = typeMd.NonNullableType;
                     var typeKind = nonNullableTypeMd.Kind;
                     if (typeKind != TypeKind.Enum) {
-                        ErrorAndThrow(new DiagMsg(DiagCode.SpecificValueExpected, typeKind.ToString()), nameToken.TextSpan);
+                        ErrorAndThrow(new DiagMsg(DiagnosticCode.SpecificValueExpected, typeKind.ToString()), nameToken.TextSpan);
                     }
                     enumMd = AssemblyMd.TryGetGlobalType<EnumTypeMd>(fullName);
                     if (enumMd == null) {
-                        ErrorAndThrow(new DiagMsg(DiagCode.InvalidEnumReference, fullName.ToString()), nameToken.TextSpan);
+                        ErrorAndThrow(new DiagMsg(DiagnosticCode.InvalidEnumReference, fullName.ToString()), nameToken.TextSpan);
                     }
                     var declaredEnumMd = nonNullableTypeMd.TryGetGlobalType<EnumTypeMd>();
                     if (enumMd != declaredEnumMd) {
-                        ErrorAndThrow(new DiagMsg(DiagCode.EnumNotEqualToTheDeclared, fullName.ToString(), declaredEnumMd.FullName.ToString()),
+                        ErrorAndThrow(new DiagMsg(DiagnosticCode.EnumNotEqualToTheDeclared, fullName.ToString(), declaredEnumMd.FullName.ToString()),
                             nameToken.TextSpan);
                     }
                 }
@@ -357,11 +307,11 @@ namespace SData.Internal {
                 var memberNameToken = IdentifierExpected();
                 if (enumMd != null) {
                     if (!enumMd._members.TryGetValue(memberNameToken.Value, out result)) {
-                        ErrorAndThrow(new DiagMsg(DiagCode.InvalidEnumMemberName, memberNameToken.Value), memberNameToken.TextSpan);
+                        ErrorAndThrow(new DiagMsg(DiagnosticCode.InvalidEnumMemberName, memberNameToken.Value), memberNameToken.TextSpan);
                     }
                 }
                 else {
-                    result = new UntypedEnumMember(fullName, memberNameToken.Value);
+                    result = new UntypedEnumValue(fullName, memberNameToken.Value);
                 }
                 textSpan = memberNameToken.TextSpan;
                 return true;
@@ -373,7 +323,7 @@ namespace SData.Internal {
                     var isList = typeKind == TypeKind.List;
                     var isSet = typeKind == TypeKind.SimpleSet || typeKind == TypeKind.ObjectSet;
                     if (!isList && !isSet) {
-                        ErrorAndThrow(new DiagMsg(DiagCode.SpecificValueExpected, typeKind.ToString()), token.TextSpan);
+                        ErrorAndThrow(new DiagMsg(DiagnosticCode.SpecificValueExpected, typeKind.ToString()), token.TextSpan);
                     }
                     var collTypeMd = (CollectionTypeMd)nonNullableTypeMd;
                     var collObj = collTypeMd.CreateInstance();
@@ -384,7 +334,7 @@ namespace SData.Internal {
                         if (LocalValue(itemMd, out itemObj, out ts)) {
                             if (isSet) {
                                 if (!collTypeMd.InvokeBoolAdd(collObj, itemObj)) {
-                                    ErrorAndThrow(new DiagMsg(DiagCode.DuplicateSetItem), ts);
+                                    ErrorAndThrow(new DiagMsg(DiagnosticCode.DuplicateSetItem), ts);
                                 }
                             }
                             else {
@@ -427,7 +377,7 @@ namespace SData.Internal {
                     var nonNullableTypeMd = typeMd.NonNullableType;
                     var typeKind = nonNullableTypeMd.Kind;
                     if (typeKind != TypeKind.Map) {
-                        ErrorAndThrow(new DiagMsg(DiagCode.SpecificValueExpected, typeKind.ToString()), token.TextSpan);
+                        ErrorAndThrow(new DiagMsg(DiagnosticCode.SpecificValueExpected, typeKind.ToString()), token.TextSpan);
                     }
                     var collTypeMd = (CollectionTypeMd)nonNullableTypeMd;
                     var collObj = collTypeMd.CreateInstance();
@@ -438,7 +388,7 @@ namespace SData.Internal {
                     while (true) {
                         if (LocalValue(keyMd, out keyObj, out ts)) {
                             if (collTypeMd.InvokeContainsKey(collObj, keyObj)) {
-                                ErrorAndThrow(new DiagMsg(DiagCode.DuplicateMapKey), ts);
+                                ErrorAndThrow(new DiagMsg(DiagnosticCode.DuplicateMapKey), ts);
                             }
                             TokenExpected('=');
                             collTypeMd.InvokeAdd(collObj, keyObj, LocalValueExpected(valueMd));
