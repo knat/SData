@@ -2,11 +2,7 @@
 
 namespace SData.Internal {
     public enum TokenKind {
-        Whitespace = -1000,
-        NewLine,
-        SingleLineComment,
-        MultiLineComment,
-        NormalIdentifier,// id
+        NormalIdentifier = -1000,// id
         VerbatimIdentifier,// @id
         NormalString,// "..."
         VerbatimString,// @"..."
@@ -15,35 +11,8 @@ namespace SData.Internal {
         Decimal,// +-123.45
         Real,// +-123.45Ee+-12
         //
-        //
-        //BarBar,// ||
-        //BarEquals,// |=
-        //AmpersandAmpersand,// &&
-        //AmpersandEquals,// &=
-        //MinusMinus,// --
-        //MinusEquals,// -=
-        //MinusGreaterThan,// ->
-        //PlusPlus,// ++
-        //PlusEquals,// +=
-        //ExclamationEquals,// !=
-        //EqualsEquals,// ==
-        //EqualsGreaterThan,// =>
-        //LessThanEquals,// <=
-        //LessThanLessThan,// <<
-        //LessThanLessThanEquals,// <<=
-        //GreaterThanEquals,// >=
-        ////GreaterThanGreaterThan,// >>
-        ////GreaterThanGreaterThanEquals,// >>=
-        //SlashEquals,// /=
-        //AsteriskEquals,// *=
-        //CaretEquals,// ^=
-        //PercentEquals,// %=
-        //QuestionQuestion,// ??
         ColonColon,// ::
         HashOpenBracket,// #[
-        //
-        //HashHash,// ##
-
     }
     public struct Token : IEquatable<Token> {
         public Token(int kind, string value, TextSpan textSpan) {
@@ -64,21 +33,6 @@ namespace SData.Internal {
                 return TextSpan.IsValid;
             }
         }
-        //public bool IsWhitespace {
-        //    get {
-        //        return TokenKind == TokenKind.Whitespace;
-        //    }
-        //}
-        //public bool IsNewLine {
-        //    get {
-        //        return TokenKind == TokenKind.NewLine;
-        //    }
-        //}
-        //public bool IsSingleLineComment {
-        //    get {
-        //        return TokenKind == TokenKind.SingleLineComment;
-        //    }
-        //}
         public bool IsEndOfFile {
             get {
                 return Kind == char.MaxValue;
@@ -157,9 +111,9 @@ namespace SData.Internal {
                 return TokenKind == TokenKind.Real;
             }
         }
-        public bool IsAtom {
+        public bool IsAtomValue {
             get {
-                return IsString || IsBoolean || IsInteger || IsDecimal || IsReal || IsChar;
+                return IsString || IsInteger || IsBoolean || IsDecimal || IsReal || IsChar;
             }
         }
         //

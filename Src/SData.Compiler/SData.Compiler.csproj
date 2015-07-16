@@ -51,12 +51,12 @@
     <Compile Include="CS.cs" />
     <Compile Include="Diagnostics.cs" />
     <Compile Include="DottedName.cs" />
-    <Compile Include="EX.cs" />
+    <Compile Include="CSEX.cs" />
     <Compile Include="Infos.cs" />
     <Compile Include="Md.cs" />
     <Compile Include="Nodes.cs" />
     <Compile Include="Parser.cs" />
-    <Compile Include="ParsingContext.cs" />
+    <Compile Include="CompilerContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -9,8 +9,10 @@ namespace SData.Internal {
         private static Parser Instance {
             get { return _instance ?? (_instance = new Parser()); }
         }
-        private Stack<List<AliasUri>> _aliasUriListStack;
-        private Parser() { }
+        private Parser() {
+            _aliasUriListStack = new Stack<List<AliasUri>>();
+        }
+        private readonly Stack<List<AliasUri>> _aliasUriListStack;
         public static bool Parse(string filePath, TextReader reader, LoadingContext context, ClassTypeMd classTypeMd, out object result) {
             if (classTypeMd == null) throw new ArgumentNullException("classTypeMd");
             return Instance.ParsingUnit(filePath, reader, context, classTypeMd, out result);
@@ -18,12 +20,7 @@ namespace SData.Internal {
         private bool ParsingUnit(string filePath, TextReader reader, LoadingContext context, ClassTypeMd classTypeMd, out object result) {
             try {
                 Set(filePath, reader, context);
-                if (_aliasUriListStack == null) {
-                    _aliasUriListStack = new Stack<List<AliasUri>>();
-                }
-                else {
-                    _aliasUriListStack.Clear();
-                }
+                _aliasUriListStack.Clear();
                 object obj;
                 TextSpan textSpan;
                 if (ClassValue(classTypeMd, out obj, out textSpan)) {
@@ -42,8 +39,6 @@ namespace SData.Internal {
             result = null;
             return false;
         }
-
-
 
         private string GetUri(Token aliasToken) {
             var alias = aliasToken.Value;
@@ -171,7 +166,7 @@ namespace SData.Internal {
                             break;
                         }
                     }
-                    var closeBraceToken = TokenExpectedEx('}');
+                    var closeBraceToken = TokenExpected('}');
                     if (propMdMap.Count > 0) {
                         var needThrow = false;
                         foreach (var propMd in propMdMap.Values) {
@@ -246,7 +241,7 @@ namespace SData.Internal {
                 textSpan = token.TextSpan;
                 return true;
             }
-            if (Atom(out token)) {
+            if (AtomValue(out token)) {
                 if (typeMd != null) {
                     var nonNullableTypeMd = typeMd.NonNullableType;
                     var typeKind = nonNullableTypeMd.Kind;
@@ -258,7 +253,7 @@ namespace SData.Internal {
                             ErrorAndThrow(new DiagMsg(DiagnosticCode.SpecificValueExpected, typeKind.ToString()), token.TextSpan);
                         }
                     }
-                    result = AtomExtensionsEx.TryParse(typeKind, token.Value);
+                    result = AtomExtensions.TryParse(typeKind, token.Value);
                     if (result == null) {
                         ErrorAndThrow(new DiagMsg(DiagnosticCode.InvalidAtomValue, typeKind.ToString(), token.Value), token.TextSpan);
                     }

@@ -1,14 +1,6 @@
 ﻿using System.Collections.Generic;
 
 namespace SData {
-    public struct NameValuePair {
-        public NameValuePair(string name, object value) {
-            Name = name;
-            Value = value;
-        }
-        public readonly string Name;
-        public readonly object Value;
-    }
     public class UntypedObject {
         public UntypedObject() { }
         public UntypedObject(FullName? classFullName, Dictionary<string, object> properties) {
@@ -28,14 +20,5 @@ namespace SData {
         public FullName EnumFullName { get; set; }
         public string MemberName { get; set; }
     }
-    //public sealed class PropertyValue {
-    //    public PropertyValue() { }
-    //    public PropertyValue(string name, object value) {
-    //        Name = name;
-    //        Value = value;
-    //    }
-    //    public string Name { get; set; }
-    //    public object Value { get; set; }
-    //}
 
 }

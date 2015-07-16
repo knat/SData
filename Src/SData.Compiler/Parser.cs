@@ -133,52 +133,44 @@ namespace SData.Compiler {
             return qName;
         }
         private void CheckDuplicateGlobalType(NamespaceNode ns, Token name) {
-            if (ns.GlobalTypeList.Count > 0) {
-                foreach (var globalType in ns.GlobalTypeList) {
-                    if (globalType.Name == name) {
-                        ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateGlobalTypeName, name.Value), name.TextSpan);
-                    }
-                }
+            if (ns.GlobalTypeMap.ContainsKey(name)) {
+                ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateGlobalTypeName, name.Value), name.TextSpan);
             }
         }
         private bool GlobalType(NamespaceNode ns) {
-            if (Class(ns)) {
+            if (ClassType(ns)) {
                 return true;
             }
-            return Enum(ns);
+            return EnumType(ns);
         }
-        private bool Enum(NamespaceNode ns) {
+        private bool EnumType(NamespaceNode ns) {
             if (Keyword(ParserConstants.EnumKeyword)) {
                 var name = IdentifierExpected();
                 CheckDuplicateGlobalType(ns, name);
                 KeywordExpected(ParserConstants.AsKeyword);
                 var atomQName = QualifiableNameExpected();
                 TokenExpected('{');
-                var en = new EnumNode(ns, name, atomQName);
-                while (EnumMember(en)) ;
+                var en = new EnumTypeNode(ns, name, atomQName);
+                while (EnumTypeMember(en)) ;
                 TokenExpected('}');
-                ns.GlobalTypeList.Add(en);
+                ns.GlobalTypeMap.Add(name, en);
                 return true;
             }
             return false;
         }
-        private bool EnumMember(EnumNode en) {
+        private bool EnumTypeMember(EnumTypeNode en) {
             Token name;
             if (Identifier(out name)) {
-                if (en.MemberList.Count > 0) {
-                    foreach (var item in en.MemberList) {
-                        if (item.Name == name) {
-                            ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateEnumMemberName, name.Value), name.TextSpan);
-                        }
-                    }
+                if (en.MemberMap.ContainsKey(name)) {
+                    ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateEnumMemberName, name.Value), name.TextSpan);
                 }
                 TokenExpected('=');
-                en.MemberList.Add(new EnumMemberNode(name, AtomExpected()));
+                en.MemberMap.Add(name, AtomValueExpected());
                 return true;
             }
             return false;
         }
-        private bool Class(NamespaceNode ns) {
+        private bool ClassType(NamespaceNode ns) {
             if (Keyword(ParserConstants.ClassKeyword)) {
                 var name = IdentifierExpected();
                 CheckDuplicateGlobalType(ns, name);
@@ -194,27 +186,23 @@ namespace SData.Compiler {
                     baseClassQName = QualifiableNameExpected();
                 }
                 TokenExpected('{');
-                var cls = new ClassNode(ns, name, abstractOrSealed, baseClassQName);
-                while (Property(ns, cls)) ;
+                var cls = new ClassTypeNode(ns, name, abstractOrSealed, baseClassQName);
+                while (ClassTypeProperty(ns, cls)) ;
                 TokenExpected('}');
-                ns.GlobalTypeList.Add(cls);
+                ns.GlobalTypeMap.Add(name, cls);
                 return true;
             }
             return false;
         }
-        private bool Property(NamespaceNode ns, ClassNode cls) {
+        private bool ClassTypeProperty(NamespaceNode ns, ClassTypeNode cls) {
             Token name;
             if (Identifier(out name)) {
-                if (cls.PropertyList.Count > 0) {
-                    foreach (var item in cls.PropertyList) {
-                        if (item.Name == name) {
-                            ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicatePropertyName, name.Value), name.TextSpan);
-                        }
-                    }
+                if (cls.PropertyMap.ContainsKey(name)) {
+                    ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicatePropertyName, name.Value), name.TextSpan);
                 }
                 KeywordExpected(ParserConstants.AsKeyword);
-                cls.PropertyList.Add(new PropertyNode(ns, name,
-                    LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef | LocalTypeFlags.Nullable | LocalTypeFlags.List | LocalTypeFlags.Set | LocalTypeFlags.Map)));
+                cls.PropertyMap.Add(name,
+                    LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef | LocalTypeFlags.Nullable | LocalTypeFlags.List | LocalTypeFlags.Set | LocalTypeFlags.Map));
                 return true;
             }
             return false;
@@ -236,29 +224,29 @@ namespace SData.Compiler {
         }
         private bool LocalType(NamespaceNode ns, LocalTypeFlags flags, out LocalTypeNode result) {
             if ((flags & LocalTypeFlags.Nullable) != 0) {
-                NullableNode r;
-                if (Nullable(ns, out r)) {
+                NullableTypeNode r;
+                if (NullableType(ns, out r)) {
                     result = r;
                     return true;
                 }
             }
             if ((flags & LocalTypeFlags.List) != 0) {
-                ListNode r;
-                if (List(ns, out r)) {
+                ListTypeNode r;
+                if (ListType(ns, out r)) {
                     result = r;
                     return true;
                 }
             }
             if ((flags & LocalTypeFlags.Set) != 0) {
-                SetNode r;
-                if (Set(ns, out r)) {
+                SetTypeNode r;
+                if (SetType(ns, out r)) {
                     result = r;
                     return true;
                 }
             }
             if ((flags & LocalTypeFlags.Map) != 0) {
-                MapNode r;
-                if (Map(ns, out r)) {
+                MapTypeNode r;
+                if (MapType(ns, out r)) {
                     result = r;
                     return true;
                 }
@@ -273,6 +261,18 @@ namespace SData.Compiler {
             result = null;
             return false;
         }
+        private bool NullableType(NamespaceNode ns, out NullableTypeNode result) {
+            Token tk;
+            if (Keyword(ParserConstants.NullableKeyword, out tk)) {
+                TokenExpected('<');
+                var element = (NonNullableTypeNode)LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef | LocalTypeFlags.List | LocalTypeFlags.Set | LocalTypeFlags.Map);
+                TokenExpected('>');
+                result = new NullableTypeNode(ns, tk.TextSpan, element);
+                return true;
+            }
+            result = null;
+            return false;
+        }
         private bool GlobalTypeRef(NamespaceNode ns, out GlobalTypeRefNode result) {
             QualifiableNameNode qName;
             if (QualifiableName(out qName)) {
@@ -282,31 +282,19 @@ namespace SData.Compiler {
             result = null;
             return false;
         }
-        private bool Nullable(NamespaceNode ns, out NullableNode result) {
-            Token tk;
-            if (Keyword(ParserConstants.NullableKeyword, out tk)) {
-                TokenExpected('<');
-                var element = LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef | LocalTypeFlags.List | LocalTypeFlags.Set | LocalTypeFlags.Map);
-                TokenExpected('>');
-                result = new NullableNode(ns, tk.TextSpan, element);
-                return true;
-            }
-            result = null;
-            return false;
-        }
-        private bool List(NamespaceNode ns, out ListNode result) {
+        private bool ListType(NamespaceNode ns, out ListTypeNode result) {
             Token tk;
             if (Keyword(ParserConstants.ListKeyword, out tk)) {
                 TokenExpected('<');
                 var item = LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef | LocalTypeFlags.Nullable | LocalTypeFlags.List | LocalTypeFlags.Set | LocalTypeFlags.Map);
                 TokenExpected('>');
-                result = new ListNode(ns, tk.TextSpan, item);
+                result = new ListTypeNode(ns, tk.TextSpan, item);
                 return true;
             }
             result = null;
             return false;
         }
-        private bool Map(NamespaceNode ns, out MapNode result) {
+        private bool MapType(NamespaceNode ns, out MapTypeNode result) {
             Token tk;
             if (Keyword(ParserConstants.MapKeyword, out tk)) {
                 TokenExpected('<');
@@ -314,13 +302,13 @@ namespace SData.Compiler {
                 TokenExpected(',');
                 var value = LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef | LocalTypeFlags.Nullable | LocalTypeFlags.List | LocalTypeFlags.Set | LocalTypeFlags.Map);
                 TokenExpected('>');
-                result = new MapNode(ns, tk.TextSpan, key, value);
+                result = new MapTypeNode(ns, tk.TextSpan, key, value);
                 return true;
             }
             result = null;
             return false;
         }
-        private bool Set(NamespaceNode ns, out SetNode result) {
+        private bool SetType(NamespaceNode ns, out SetTypeNode result) {
             Token tk;
             if (Keyword(ParserConstants.SetKeyword, out tk)) {
                 TokenExpected('<');
@@ -337,7 +325,7 @@ namespace SData.Compiler {
                         }
                     }
                 }
-                result = new SetNode(ns, tk.TextSpan, item, keyNameList, TokenExpectedEx('>').TextSpan);
+                result = new SetTypeNode(ns, tk.TextSpan, item, keyNameList, TokenExpected('>').TextSpan);
                 return true;
             }
             result = null;

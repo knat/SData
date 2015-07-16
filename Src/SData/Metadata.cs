@@ -7,22 +7,17 @@ using SData.Internal;
 namespace SData {
     public abstract class AssemblyMd {
         private static readonly Dictionary<FullName, GlobalTypeMd> _globalTypeMap = new Dictionary<FullName, GlobalTypeMd>();
-        //private static readonly HashSet<string> _uriSet = new HashSet<string>();
         public static T TryGetGlobalType<T>(FullName fullName) where T : GlobalTypeMd {
             GlobalTypeMd globalType;
             _globalTypeMap.TryGetValue(fullName, out globalType);
             return globalType as T;
         }
-        //internal static bool IsUriDefined(string uri) {
-        //    return _uriSet.Contains(uri);
-        //}
         protected void AddGlobalTypes(GlobalTypeMd[] globalTypes) {
             if (globalTypes != null) {
                 lock (_globalTypeMap) {
                     foreach (var globalType in globalTypes) {
                         var fullName = globalType.FullName;
                         _globalTypeMap.Add(fullName, globalType);
-                        //_uriSet.Add(fullName.Uri);
                     }
                 }
             }
@@ -50,20 +45,15 @@ namespace SData {
         Guid = 17,
         TimeSpan = 18,
         DateTimeOffset = 19,
-        //Null = 30,
         //
         Class = 50,
         Enum = 51,
         //
         Nullable = 70,
-        //Enumerable = 71,
-        List = 72,
-        SimpleSet = 73,
-        ObjectSet = 74,
-        Map = 75,
-        //MapItem = 76,
-        //AnonymousClass = 76,
-        //Void = 77,
+        List = 71,
+        SimpleSet = 72,
+        ObjectSet = 73,
+        Map = 74,
 
     }
 
@@ -82,9 +72,9 @@ namespace SData {
                 return Kind == TypeKind.Nullable;
             }
         }
-        public NonNullableType NonNullableType {
+        public NonNullableTypeMd NonNullableType {
             get {
-                var nnt = this as NonNullableType;
+                var nnt = this as NonNullableTypeMd;
                 if (nnt != null) {
                     return nnt;
                 }
@@ -93,63 +83,15 @@ namespace SData {
         }
     }
     public sealed class NullableTypeMd : LocalTypeMd {
-        public NullableTypeMd(NonNullableType elementType)
+        public NullableTypeMd(NonNullableTypeMd elementType)
             : base(TypeKind.Nullable) {
             ElementType = elementType;
         }
-        public readonly NonNullableType ElementType;
+        public readonly NonNullableTypeMd ElementType;
     }
-    //public sealed class AnonymousClassTypeMd : LocalTypeMd {
-    //    public AnonymousClassTypeMd(AnonymousClassPropertyMd[] properties)
-    //        : base(TypeKind.AnonymousClass) {
-    //        _properties = properties;
-    //    }
-    //    private readonly AnonymousClassPropertyMd[] _properties;//opt
-    //    public AnonymousClassPropertyMd GetProperty(string name) {
-    //        var props = _properties;
-    //        if (props != null) {
-    //            var length = props.Length;
-    //            for (var i = 0; i < length; ++i) {
-    //                if (props[i].Name == name) {
-    //                    return props[i];
-    //                }
-    //            }
-    //        }
-    //        return null;
-    //    }
-    //}
-    //public abstract class NameTypePairMd : ITypeProviderMd {
-    //    protected NameTypePairMd(string name, LocalTypeMd type) {
-    //        Name = name;
-    //        Type = type;
-    //    }
-    //    public readonly string Name;
-    //    public readonly LocalTypeMd Type;
-    //    TypeMd ITypeProviderMd.Type {
-    //        get { return Type; }
-    //    }
-    //}
-    //public sealed class AnonymousClassPropertyMd : NameTypePairMd {
-    //    public AnonymousClassPropertyMd(string name, LocalTypeMd type)
-    //        : base(name, type) {
-    //    }
-    //}
-    //public class EnumerableTypeMd : LocalTypeMd {
-    //    public EnumerableTypeMd(LocalTypeMd itemType)
-    //        : base(TypeKind.Enumerable) {
-    //        ItemType = itemType;
-    //    }
-    //    protected EnumerableTypeMd(TypeKind kind, LocalTypeMd itemType)
-    //        : base(kind) {
-    //        ItemType = itemType;
-    //    }
-    //    public readonly LocalTypeMd ItemType;
-    //}
 
-    //for List, SimpleSet, ObjectSet, Map
-
-    public abstract class NonNullableType : LocalTypeMd {
-        protected NonNullableType(TypeKind kind)
+    public abstract class NonNullableTypeMd : LocalTypeMd {
+        protected NonNullableTypeMd(TypeKind kind)
             : base(kind) {
         }
         public T TryGetGlobalType<T>() where T : GlobalTypeMd {
@@ -160,16 +102,8 @@ namespace SData {
             return null;
         }
     }
-    //public sealed class MapItemTypeMd : NonNullableType {
-    //    public MapItemTypeMd(AtomTypeMd keyType, LocalTypeMd valueType)
-    //        : base(TypeKind.MapItem) {
-    //        KeyType = keyType;
-    //        ValueType = valueType;
-    //    }
-    //    public readonly AtomTypeMd KeyType;
-    //    public readonly LocalTypeMd ValueType;
-    //}
-    public sealed class CollectionTypeMd : NonNullableType {
+
+    public sealed class CollectionTypeMd : NonNullableTypeMd {
         public CollectionTypeMd(TypeKind kind, LocalTypeMd itemOrValueType,
             GlobalTypeRefMd mapKeyType, object objectSetKeySelector, Type clrType)
             : base(kind) {
@@ -220,7 +154,7 @@ namespace SData {
             return ClrGetEnumeratorMethod.Invoke(obj, null) as IDictionaryEnumerator;
         }
     }
-    public sealed class GlobalTypeRefMd : NonNullableType {
+    public sealed class GlobalTypeRefMd : NonNullableTypeMd {
         public GlobalTypeRefMd(GlobalTypeMd globalType)
             : base(globalType.Kind) {
             GlobalType = globalType;
@@ -283,12 +217,12 @@ namespace SData {
         }
         public readonly FullName FullName;
     }
-    public abstract class SimpleTypeMd : GlobalTypeMd {
-        protected SimpleTypeMd(TypeKind kind, FullName fullName)
+    public abstract class SimpleGlobalTypeMd : GlobalTypeMd {
+        protected SimpleGlobalTypeMd(TypeKind kind, FullName fullName)
             : base(kind, fullName) {
         }
     }
-    public sealed class AtomTypeMd : SimpleTypeMd {
+    public sealed class AtomTypeMd : SimpleGlobalTypeMd {
         public static AtomTypeMd Get(TypeKind kind) {
             return _map[kind];
         }
@@ -353,7 +287,7 @@ namespace SData {
             };
 
     }
-    public sealed class EnumTypeMd : SimpleTypeMd {
+    public sealed class EnumTypeMd : SimpleGlobalTypeMd {
         public EnumTypeMd(FullName fullName, AtomTypeMd underlyingType, Dictionary<string, object> members)
             : base(TypeKind.Enum, fullName) {
             UnderlyingType = underlyingType;
@@ -375,39 +309,6 @@ namespace SData {
             }
             return null;
         }
-        //private readonly EnumTypeMemberMd[] _members;
-        //public EnumTypeMemberMd GetProperty(string name) {
-        //    var props = _members;
-        //    if (props != null) {
-        //        var length = props.Length;
-        //        for (var i = 0; i < length; ++i) {
-        //            if (props[i].Name == name) {
-        //                return props[i];
-        //            }
-        //        }
-        //    }
-        //    return null;
-        //}
-        //public object GetPropertyValue(string name) {
-        //    var prop = GetProperty(name);
-        //    if (prop != null) {
-        //        return prop.Value;
-        //    }
-        //    return null;
-        //}
-        //public string GetPropertyName(object value) {
-        //    var props = _members;
-        //    if (props != null) {
-        //        var length = props.Length;
-        //        for (var i = 0; i < length; ++i) {
-        //            if (props[i].Value.Equals(value)) {
-        //                return props[i].Name;
-        //            }
-        //        }
-        //    }
-        //    return null;
-        //}
-
     }
 
     public sealed class ClassTypeMd : GlobalTypeMd {
@@ -473,45 +374,6 @@ namespace SData {
             }
             return false;
         }
-        //public ClassTypePropertyMd GetPropertyInHierarchy(string name) {
-        //    var props = _properties;
-        //    if (props != null) {
-        //        var length = props.Length;
-        //        for (var i = 0; i < length; ++i) {
-        //            if (props[i].Name == name) {
-        //                return props[i];
-        //            }
-        //        }
-        //    }
-        //    if (BaseClass != null) {
-        //        return BaseClass.GetPropertyInHierarchy(name);
-        //    }
-        //    return null;
-        //}
-        //public void GetPropertiesInHierarchy(ref List<ClassTypePropertyMd> propList) {
-        //    if (BaseClass != null) {
-        //        BaseClass.GetPropertiesInHierarchy(ref propList);
-        //    }
-        //    if (_properties != null) {
-        //        if (propList == null) {
-        //            propList = new List<ClassTypePropertyMd>(_properties);
-        //        }
-        //        else {
-        //            propList.AddRange(_properties);
-        //        }
-        //    }
-        //}
-        //public IEnumerable<ClassTypePropertyMd> GetPropertiesInHierarchy() {
-        //    if (BaseClass == null) {
-        //        return _properties;
-        //    }
-        //    if (_properties == null) {
-        //        return BaseClass.GetPropertiesInHierarchy();
-        //    }
-        //    List<ClassTypePropertyMd> propList = null;
-        //    GetPropertiesInHierarchy(ref propList);
-        //    return propList;
-        //}
         public object CreateInstance() {
             //FormatterServices.GetUninitializedObject()
             return ClrConstructor.Invoke(null);

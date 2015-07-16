@@ -39,7 +39,7 @@ namespace SData {
                 Context = context;
                 StartIndex = context.DiagnosticList.Count;
             }
-            internal readonly LoadingContext Context;
+            public readonly LoadingContext Context;
             public readonly int StartIndex;
             public int Count {
                 get {

@@ -24,7 +24,7 @@ namespace SData.Compiler {
                 return true;
             }
             try {
-                context = new ParsingContext();
+                context = new CompilerContext();
                 var cuList = new List<CompilationUnitNode>();
                 foreach (var filePath in contractFileList) {
                     using (var reader = new StreamReader(filePath)) {
@@ -37,7 +37,7 @@ namespace SData.Compiler {
                         }
                     }
                 }
-                return CompileCore((ParsingContext)context, cuList, csFileList, csPpList, csRefList, assemblyName, ref code);
+                return CompileCore((CompilerContext)context, cuList, csFileList, csPpList, csRefList, assemblyName, ref code);
             }
             catch (Exception ex) {
                 context.AddDiagnostic(DiagnosticSeverity.Error, (int)DiagCodeEx.InternalCompilerError, "Internal compiler error: " + ex.ToString(), default(TextSpan));
@@ -51,10 +51,10 @@ namespace SData.Compiler {
 
 ";
         private static readonly CSharpCompilationOptions _compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-        private static bool CompileCore(ParsingContext context, List<CompilationUnitNode> cuList,
+        private static bool CompileCore(CompilerContext context, List<CompilationUnitNode> cuList,
             List<string> csFileList, List<string> csPpList, List<MetadataReference> csRefList, string assemblyName, ref string code) {
             try {
-                ParsingContext.Current = context;
+                CompilerContext.Current = context;
                 var nsList = new List<NamespaceNode>();
                 foreach (var cu in cuList) {
                     nsList.AddRange(cu.NamespaceList);
@@ -70,7 +70,7 @@ namespace SData.Compiler {
                         logicalNS = new LogicalNamespace();
                         nsMap.Add(uri, logicalNS);
                     }
-                    logicalNS.Add(ns);
+                    logicalNS.NamespaceList.Add(ns);
                     ns.LogicalNamespace = logicalNS;
                 }
                 foreach (var ns in nsList) {
@@ -100,18 +100,18 @@ namespace SData.Compiler {
                         if (csRef.Properties.Kind == MetadataImageKind.Assembly) {
                             var assSymbol = compilation.GetAssemblyOrModuleSymbol(csRef) as IAssemblySymbol;
                             if (assSymbol != null) {
-                                EX.MapNamespaces(nsMap, assSymbol, true);
+                                CSEX.MapNamespaces(nsMap, assSymbol, true);
                             }
                         }
                     }
                     var compilationAssSymbol = compilation.Assembly;
-                    if (EX.MapNamespaces(nsMap, compilationAssSymbol, false) > 0) {
+                    if (CSEX.MapNamespaces(nsMap, compilationAssSymbol, false) > 0) {
                         foreach (var logicalNs in nsMap.Values) {
                             if (logicalNs.DottedName == null) {
-                                ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ContractNamespaceAttributeRequired, logicalNs.Uri), default(TextSpan));
+                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ContractNamespaceAttributeRequired, logicalNs.Uri), default(TextSpan));
                             }
                         }
-                        EX.MapClasses(nsMap, compilationAssSymbol.GlobalNamespace);
+                        CSEX.MapClasses(nsMap, compilationAssSymbol.GlobalNamespace);
                         foreach (var logicalNs in nsMap.Values) {
                             logicalNs.NamespaceInfo.SetGlobalTypeDottedNames();
                         }
@@ -121,7 +121,7 @@ namespace SData.Compiler {
                         List<AttributeListSyntax> cuCompierAttList = new List<AttributeListSyntax>();
                         List<MemberDeclarationSyntax> cuMemberSyntaxList = new List<MemberDeclarationSyntax>();
                         List<ExpressionSyntax> globalTypeMdSyntaxList = new List<ExpressionSyntax>();
-                        var userAssemblyMetadataName = EX.UserAssemblyMetadataName(assemblyName);
+                        var userAssemblyMetadataName = CSEX.UserAssemblyMetadataName(assemblyName);
                         var assMdExpr = CS.MemberAccessExpr(CS.GlobalAliasQualifiedName(userAssemblyMetadataName), "Instance");
                         System.Text.StringBuilder sb = null;
                         foreach (var logicalNs in nsMap.Values) {
@@ -137,7 +137,7 @@ namespace SData.Compiler {
                                 }
                                 //mdns.Save(sb);
                                 var data = sb.ToString();
-                                cuCompierAttList.Add(CS.AttributeList("assembly", EX.__CompilerSchemaNamespaceAttributeName,
+                                cuCompierAttList.Add(CS.AttributeList("assembly", CSEX.__CompilerSchemaNamespaceAttributeName,
                                     SyntaxFactory.AttributeArgument(CS.Literal(uri)),
                                     SyntaxFactory.AttributeArgument(CS.Literal(csns)),
                                     SyntaxFactory.AttributeArgument(CS.Literal(data))));
@@ -149,11 +149,11 @@ namespace SData.Compiler {
                             //>  public static readonly AssemblyMetadata Instance = new AssemblyMetadata_XX(new GlobalTypeMetadata[]{ ... });
                             //>  private AssemblyMetadata_XX(GlobalTypeMetadata[] globalTypes):base(globalTypes) { }
                             //>}
-                            cuMemberSyntaxList.Add(CS.Class(null, CS.PublicSealedTokenList, userAssemblyMetadataName, new[] { EX.AssemblyMdName },
-                                CS.Field(CS.PublicStaticReadOnlyTokenList, EX.AssemblyMdName, "Instance",
-                                    CS.NewObjExpr(CS.IdName(userAssemblyMetadataName), CS.NewArrExpr(EX.GlobalTypeMdArrayType, globalTypeMdSyntaxList))),
+                            cuMemberSyntaxList.Add(CS.Class(null, CS.PublicSealedTokenList, userAssemblyMetadataName, new[] { CSEX.AssemblyMdName },
+                                CS.Field(CS.PublicStaticReadOnlyTokenList, CSEX.AssemblyMdName, "Instance",
+                                    CS.NewObjExpr(CS.IdName(userAssemblyMetadataName), CS.NewArrExpr(CSEX.GlobalTypeMdArrayType, globalTypeMdSyntaxList))),
                                 CS.Constructor(CS.PrivateTokenList, userAssemblyMetadataName,
-                                    new[] { CS.Parameter(EX.GlobalTypeMdArrayType, "globalTypes") },
+                                    new[] { CS.Parameter(CSEX.GlobalTypeMdArrayType, "globalTypes") },
                                     CS.ConstructorInitializer(true, CS.IdName("globalTypes")))
                                 ));
                         }

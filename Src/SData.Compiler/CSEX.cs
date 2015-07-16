@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SData.Internal;
 
 namespace SData.Compiler {
-    internal static class EX {
+    internal static class CSEX {
         internal static readonly string[] IgnoreCaseStringNameParts = new string[] { "IgnoreCaseString", "SData" };
         internal static readonly string[] BinaryNameParts = new string[] { "Binary", "SData" };
         internal static readonly string[] IObjectSet2NameParts = new string[] { "IObjectSet`2", "SData" };
@@ -59,29 +59,29 @@ namespace SData.Compiler {
                                     }
                                 }
                                 else if (!isRef) {
-                                    ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateContractNamespaceAttributeUri, uri),
+                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateContractNamespaceAttributeUri, uri),
                                         GetTextSpan(attData));
                                 }
                             }
                             else if (!isRef) {
-                                ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractNamespaceAttributeNamespaceName, dottedNameStr),
+                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractNamespaceAttributeNamespaceName, dottedNameStr),
                                     GetTextSpan(attData));
                             }
                         }
                         else {
                             if (!isRef) {
-                                ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractNamespaceAttributeUri, uri),
+                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractNamespaceAttributeUri, uri),
                                     GetTextSpan(attData));
                             }
                             success = true;
                         }
                     }
                     else if (!isRef) {
-                        ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractNamespaceAttribute),
+                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractNamespaceAttribute),
                             GetTextSpan(attData));
                     }
                     if (isRef && !success) {
-                        ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerContractNamespaceAttribute,
+                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerContractNamespaceAttribute,
                             uri, dottedNameStr, assSymbol.Identity.Name), default(TextSpan));
                     }
                 }
@@ -107,29 +107,29 @@ namespace SData.Compiler {
                             var clsAttData = typeSymbol.GetAttributeData(SchemaClassAttributeNameParts);
                             if (clsAttData != null) {
                                 if (typeSymbol.IsGenericType) {
-                                    ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ContractClassCannotBeGeneric), GetTextSpan(typeSymbol));
+                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ContractClassCannotBeGeneric), GetTextSpan(typeSymbol));
                                 }
                                 if (typeSymbol.IsStatic) {
-                                    ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ContractClassCannotBeStatic), GetTextSpan(typeSymbol));
+                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ContractClassCannotBeStatic), GetTextSpan(typeSymbol));
                                 }
                                 var clsName = GetFirstArgumentAsString(clsAttData);
                                 if (clsName == null) {
-                                    ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractClassAttribute), GetTextSpan(clsAttData));
+                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractClassAttribute), GetTextSpan(clsAttData));
                                 }
-                                ClassInfo clsInfo = nsInfo.GetGlobalType<ClassInfo>(clsName);
+                                ClassTypeInfo clsInfo = nsInfo.TryGetGlobalType<ClassTypeInfo>(clsName);
                                 if (clsInfo == null) {
-                                    ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractClassAttributeName, clsName), GetTextSpan(clsAttData));
+                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractClassAttributeName, clsName), GetTextSpan(clsAttData));
                                 }
                                 if (clsInfo.Symbol != null) {
-                                    ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateContractClassAttributeName, clsName), GetTextSpan(clsAttData));
+                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateContractClassAttributeName, clsName), GetTextSpan(clsAttData));
                                 }
                                 if (!clsInfo.IsAbstract) {
                                     if (typeSymbol.IsAbstract) {
-                                        ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.NonAbstractContractClassRequired),
+                                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.NonAbstractContractClassRequired),
                                             GetTextSpan(typeSymbol));
                                     }
                                     if (!typeSymbol.HasParameterlessConstructor()) {
-                                        ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ParameterlessConstructorRequired),
+                                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ParameterlessConstructorRequired),
                                             GetTextSpan(typeSymbol));
                                     }
                                 }
@@ -143,19 +143,19 @@ namespace SData.Compiler {
                         foreach (var typeSymbol in typeSymbolList) {
                             if (!typeSymbol.IsGenericType) {
                                 var clsName = typeSymbol.Name;
-                                ClassInfo clsInfo = nsInfo.GetGlobalType<ClassInfo>(clsName);
+                                ClassTypeInfo clsInfo = nsInfo.TryGetGlobalType<ClassTypeInfo>(clsName);
                                 if (clsInfo != null) {
                                     if (clsInfo.Symbol == null) {
                                         if (typeSymbol.IsStatic) {
-                                            ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ContractClassCannotBeStatic), GetTextSpan(typeSymbol));
+                                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ContractClassCannotBeStatic), GetTextSpan(typeSymbol));
                                         }
                                         if (!clsInfo.IsAbstract) {
                                             if (typeSymbol.IsAbstract) {
-                                                ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.NonAbstractContractClassRequired),
+                                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.NonAbstractContractClassRequired),
                                                     GetTextSpan(typeSymbol));
                                             }
                                             if (!typeSymbol.HasParameterlessConstructor()) {
-                                                ParsingContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ParameterlessConstructorRequired),
+                                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ParameterlessConstructorRequired),
                                                     GetTextSpan(typeSymbol));
                                             }
                                         }
@@ -343,12 +343,12 @@ namespace SData.Compiler {
         internal static QualifiedNameSyntax EnumTypeMdName {
             get { return CS.QualifiedName(SDataName, "EnumTypeMd"); }
         }
-        internal static QualifiedNameSyntax NameValuePairName {
-            get { return CS.QualifiedName(SDataName, "NameValuePair"); }
-        }
-        internal static ArrayTypeSyntax NameValuePairArrayType {
-            get { return CS.OneDimArrayType(NameValuePairName); }
-        }
+        //internal static QualifiedNameSyntax NameValuePairName {
+        //    get { return CS.QualifiedName(SDataName, "NameValuePair"); }
+        //}
+        //internal static ArrayTypeSyntax NameValuePairArrayType {
+        //    get { return CS.OneDimArrayType(NameValuePairName); }
+        //}
         internal static QualifiedNameSyntax ClassTypeMdName {
             get { return CS.QualifiedName(SDataName, "ClassTypeMd"); }
         }

@@ -7,7 +7,7 @@
 
 //    class MdGlobalType[abstract]
 //    {
-//        Name as String,
+//        Name as String
 //        CSName as String
 //    }
 
@@ -22,8 +22,8 @@
 
 //    class MdProperty
 //    {
-//        Name as String,
-//        CSName as String,
+//        Name as String
+//        CSName as String
 //        IsCSProperty as Boolean
 //    }
 //}

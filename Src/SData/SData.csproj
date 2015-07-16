@@ -37,8 +37,9 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AtomExtensions.cs" />
     <Compile Include="Attributes.cs" />
-    <Compile Include="Internal\AtomExtensions.cs" />
+    <Compile Include="Internal\AtomExtensionsEx.cs" />
     <Compile Include="Binary.cs" />
     <Compile Include="Internal\AliasUri.cs" />
     <Compile Include="Internal\DiagMsg.cs" />
