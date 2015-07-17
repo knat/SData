@@ -14,9 +14,6 @@ namespace SData.Internal {
         public static bool IsSimple(this TypeKind kind) {
             return IsAtom(kind) || kind == TypeKind.Enum;
         }
-        //internal static bool IsClrEnum(this TypeKind kind) {
-        //    return kind >= TypeKind.Int64 && kind <= TypeKind.Byte;
-        //}
         public static bool IsClrRefAtom(this TypeKind kind) {
             return kind == TypeKind.String || kind == TypeKind.IgnoreCaseString || kind == TypeKind.Binary;
         }

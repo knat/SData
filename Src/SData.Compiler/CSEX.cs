@@ -16,8 +16,7 @@ namespace SData.Compiler {
         internal static readonly string[] __CompilerSchemaNamespaceAttributeNameParts = new string[] { "__CompilerSchemaNamespaceAttribute", "SData" };
         internal static readonly string[] SchemaClassAttributeNameParts = new string[] { "SchemaClassAttribute", "SData" };
         internal static readonly string[] SchemaPropertyAttributeNameParts = new string[] { "SchemaPropertyAttribute", "SData" };
-
-        internal static int MapNamespaces(LogicalNamespaceMap nsMap, IAssemblySymbol assSymbol, bool isRef) {
+        internal static int MapNamespaces(NamespaceInfoMap nsInfoMap, IAssemblySymbol assSymbol, bool isRef) {
             var count = 0;
             foreach (AttributeData attData in assSymbol.GetAttributes()) {
                 if (attData.AttributeClass.FullNameEquals(isRef ? __CompilerSchemaNamespaceAttributeNameParts : SchemaNamespaceAttributeNameParts)) {
@@ -30,15 +29,15 @@ namespace SData.Compiler {
                             dottedNameStr = ctorArgs[1].Value as string;
                         }
                     }
-                    var success = false;
+                    var refOk = false;
                     if (dottedNameStr != null) {
-                        LogicalNamespace logicalNs;
-                        if (nsMap.TryGetValue(uri, out logicalNs)) {
+                        NamespaceInfo nsInfo;
+                        if (nsInfoMap.TryGetValue(uri, out nsInfo)) {
                             DottedName dottedName;
                             if (DottedName.TryParse(dottedNameStr, out dottedName)) {
-                                if (logicalNs.DottedName == null) {
-                                    logicalNs.DottedName = dottedName;
-                                    logicalNs.IsRef = isRef;
+                                if (nsInfo.DottedName == null) {
+                                    nsInfo.DottedName = dottedName;
+                                    nsInfo.IsRef = isRef;
                                     ++count;
                                     if (isRef) {
                                         string mdData = null;
@@ -46,42 +45,40 @@ namespace SData.Compiler {
                                             mdData = ctorArgs[2].Value as string;
                                         }
                                         if (mdData != null) {
-                                            using (var sr = new StringReader(mdData)) {
-                                                var diagCtx = new LoadingContext();
-                                                MdNamespace mdNs;
-                                                //if (MdNamespace.TryLoad("__CompilerContractNamespaceAttribute", sr, diagCtx, out mdNs)) {
-                                                //    if (logicalNs.NamespaceInfo.Set(mdNs)) {
-                                                //        success = true;
-                                                //    }
-                                                //}
+                                            var ldCtx = new LoadingContext();
+                                            MdNamespace mdns = null; ;
+                                            //if (MdNamespace.TryLoad("__CompilerSchemaNamespaceAttribute", new SimpleStringReader(mdData), ldCtx, out mdNs)) {
+                                            if (nsInfo.TrySetMd(mdns)) {
+                                                refOk = true;
                                             }
+                                            //}
                                         }
                                     }
                                 }
                                 else if (!isRef) {
-                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateContractNamespaceAttributeUri, uri),
+                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateSchemaNamespaceAttributeUri, uri),
                                         GetTextSpan(attData));
                                 }
                             }
                             else if (!isRef) {
-                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractNamespaceAttributeNamespaceName, dottedNameStr),
+                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaNamespaceAttributeNamespaceName, dottedNameStr),
                                     GetTextSpan(attData));
                             }
                         }
                         else {
                             if (!isRef) {
-                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractNamespaceAttributeUri, uri),
+                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaNamespaceAttributeUri, uri),
                                     GetTextSpan(attData));
                             }
-                            success = true;
+                            refOk = true;
                         }
                     }
                     else if (!isRef) {
-                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractNamespaceAttribute),
+                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaNamespaceAttribute),
                             GetTextSpan(attData));
                     }
-                    if (isRef && !success) {
-                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerContractNamespaceAttribute,
+                    if (isRef && !refOk) {
+                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute,
                             uri, dottedNameStr, assSymbol.Identity.Name), default(TextSpan));
                     }
                 }
@@ -96,10 +93,9 @@ namespace SData.Compiler {
             }
             return null;
         }
-        internal static void MapClasses(LogicalNamespaceMap nsMap, INamespaceSymbol nsSymbol) {
+        internal static void MapClasses(NamespaceInfoMap nsInfoMap, INamespaceSymbol nsSymbol) {
             if (!nsSymbol.IsGlobalNamespace) {
-                foreach (var logicalNs in nsMap.Values) {
-                    var nsInfo = logicalNs.NamespaceInfo;
+                foreach (var nsInfo in nsInfoMap.Values) {
                     if (nsSymbol.FullNameEquals(nsInfo.DottedName.NameParts)) {
                         var typeSymbolList = nsSymbol.GetMembers().OfType<INamedTypeSymbol>().Where(i => i.TypeKind == Microsoft.CodeAnalysis.TypeKind.Class).ToList();
                         for (var i = 0; i < typeSymbolList.Count; ) {
@@ -107,25 +103,25 @@ namespace SData.Compiler {
                             var clsAttData = typeSymbol.GetAttributeData(SchemaClassAttributeNameParts);
                             if (clsAttData != null) {
                                 if (typeSymbol.IsGenericType) {
-                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ContractClassCannotBeGeneric), GetTextSpan(typeSymbol));
+                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.SchemaClassCannotBeGeneric), GetTextSpan(typeSymbol));
                                 }
                                 if (typeSymbol.IsStatic) {
-                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ContractClassCannotBeStatic), GetTextSpan(typeSymbol));
+                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.SchemaClassCannotBeStatic), GetTextSpan(typeSymbol));
                                 }
                                 var clsName = GetFirstArgumentAsString(clsAttData);
                                 if (clsName == null) {
-                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractClassAttribute), GetTextSpan(clsAttData));
+                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaClassAttribute), GetTextSpan(clsAttData));
                                 }
-                                ClassTypeInfo clsInfo = nsInfo.TryGetGlobalType<ClassTypeInfo>(clsName);
+                                var clsInfo = nsInfo.TryGetGlobalType<ClassTypeInfo>(clsName);
                                 if (clsInfo == null) {
-                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidContractClassAttributeName, clsName), GetTextSpan(clsAttData));
+                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaClassAttributeName, clsName), GetTextSpan(clsAttData));
                                 }
                                 if (clsInfo.Symbol != null) {
-                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateContractClassAttributeName, clsName), GetTextSpan(clsAttData));
+                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateSchemaClassAttributeName, clsName), GetTextSpan(clsAttData));
                                 }
                                 if (!clsInfo.IsAbstract) {
                                     if (typeSymbol.IsAbstract) {
-                                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.NonAbstractContractClassRequired),
+                                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.NonAbstractSchemaClassRequired),
                                             GetTextSpan(typeSymbol));
                                     }
                                     if (!typeSymbol.HasParameterlessConstructor()) {
@@ -143,15 +139,15 @@ namespace SData.Compiler {
                         foreach (var typeSymbol in typeSymbolList) {
                             if (!typeSymbol.IsGenericType) {
                                 var clsName = typeSymbol.Name;
-                                ClassTypeInfo clsInfo = nsInfo.TryGetGlobalType<ClassTypeInfo>(clsName);
+                                var clsInfo = nsInfo.TryGetGlobalType<ClassTypeInfo>(clsName);
                                 if (clsInfo != null) {
                                     if (clsInfo.Symbol == null) {
                                         if (typeSymbol.IsStatic) {
-                                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ContractClassCannotBeStatic), GetTextSpan(typeSymbol));
+                                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.SchemaClassCannotBeStatic), GetTextSpan(typeSymbol));
                                         }
                                         if (!clsInfo.IsAbstract) {
                                             if (typeSymbol.IsAbstract) {
-                                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.NonAbstractContractClassRequired),
+                                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.NonAbstractSchemaClassRequired),
                                                     GetTextSpan(typeSymbol));
                                             }
                                             if (!typeSymbol.HasParameterlessConstructor()) {
@@ -168,7 +164,7 @@ namespace SData.Compiler {
                 }
             }
             foreach (var subNsSymbol in nsSymbol.GetNamespaceMembers()) {
-                MapClasses(nsMap, subNsSymbol);
+                MapClasses(nsInfoMap, subNsSymbol);
             }
         }
         #region
@@ -208,7 +204,7 @@ namespace SData.Compiler {
             return new TextPosition(csPosition.Line + 1, csPosition.Character + 1);
         }
         #endregion
-        private static bool IsAtomType(TypeKind typeKind, ITypeSymbol typeSymbol) {
+        internal static bool IsAtomType(TypeKind typeKind, ITypeSymbol typeSymbol) {
             switch (typeKind) {
                 case TypeKind.String:
                     return typeSymbol.SpecialType == SpecialType.System_String;
@@ -252,15 +248,15 @@ namespace SData.Compiler {
                     throw new ArgumentException("Invalid type kind: " + typeKind.ToString());
             }
         }
-        internal static bool IsAtomType(TypeKind typeKind, bool isNullable, ITypeSymbol typeSymbol) {
-            if (!isNullable || typeKind.IsClrRefAtom()) {
-                return IsAtomType(typeKind, typeSymbol);
-            }
-            if (typeSymbol.SpecialType == SpecialType.System_Nullable_T) {
-                return IsAtomType(typeKind, ((INamedTypeSymbol)typeSymbol).TypeArguments[0]);
-            }
-            return false;
-        }
+        //internal static bool IsAtomType(TypeKind typeKind, bool isNullable, ITypeSymbol typeSymbol) {
+        //    if (!isNullable || typeKind.IsClrRefAtom()) {
+        //        return IsAtomType(typeKind, typeSymbol);
+        //    }
+        //    if (typeSymbol.SpecialType == SpecialType.System_Nullable_T) {
+        //        return IsAtomType(typeKind, ((INamedTypeSymbol)typeSymbol).TypeArguments[0]);
+        //    }
+        //    return false;
+        //}
         internal static ExpressionSyntax AtomValueLiteral(TypeKind typeKind, object value) {
             switch (typeKind) {
                 case TypeKind.String:

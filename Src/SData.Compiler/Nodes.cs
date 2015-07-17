@@ -9,44 +9,51 @@ namespace SData.Compiler {
         }
         public readonly List<NamespaceNode> NamespaceList;
     }
-    internal sealed class LogicalNamespaceMap : Dictionary<string, LogicalNamespace> {
-    }
-    internal sealed class LogicalNamespace {
-        public LogicalNamespace() {
-            NamespaceList = new List<NamespaceNode>();
-        }
-        public readonly List<NamespaceNode> NamespaceList;
-        public string Uri {
-            get { return NamespaceList[0].UriValue; }
-        }
-        public NamespaceInfo NamespaceInfo;
-        public DottedName DottedName {
-            get { return NamespaceInfo.DottedName; }
-            set { NamespaceInfo.DottedName = value; }
-        }
-        public bool IsRef {
-            get { return NamespaceInfo.IsRef; }
-            set { NamespaceInfo.IsRef = value; }
-        }
-        public void CheckDuplicateGlobalTypes() {
-            var list = NamespaceList;
-            var count = list.Count;
-            for (var i = 0; i < count - 1; ++i) {
-                for (var j = i + 1; j < count; ++j) {
-                    list[i].CheckDuplicateGlobalTypes(list[j]);
-                }
-            }
-        }
-        public GlobalTypeNode TryGetGlobalType(Token name) {
-            foreach (var ns in NamespaceList) {
-                GlobalTypeNode gt;
-                if (ns.GlobalTypeMap.TryGetValue(name, out gt)) {
-                    return gt;
-                }
-            }
-            return null;
-        }
-    }
+    //internal sealed class LogicalNamespaceMap : Dictionary<string, LogicalNamespace> {
+    //}
+    //internal sealed class LogicalNamespace {
+    //    public LogicalNamespace() {
+    //        NamespaceNodeList = new List<NamespaceNode>();
+    //    }
+    //    public readonly List<NamespaceNode> NamespaceNodeList;
+    //    public string Uri {
+    //        get { return NamespaceNodeList[0].UriValue; }
+    //    }
+    //    public NamespaceInfo NamespaceInfo;
+    //    public DottedName DottedName {
+    //        get { return NamespaceInfo.DottedName; }
+    //        set { NamespaceInfo.DottedName = value; }
+    //    }
+    //    public bool IsRef {
+    //        get { return NamespaceInfo.IsRef; }
+    //        set { NamespaceInfo.IsRef = value; }
+    //    }
+    //    public void CheckDuplicateGlobalTypes() {
+    //        var list = NamespaceNodeList;
+    //        var count = list.Count;
+    //        for (var i = 0; i < count - 1; ++i) {
+    //            var thisGlobalTypeMap = list[i].GlobalTypeMap;
+    //            for (var j = i + 1; j < count; ++j) {
+    //                foreach (var otherGlobalTypeName in list[j].GlobalTypeMap.Keys) {
+    //                    if (thisGlobalTypeMap.ContainsKey(otherGlobalTypeName)) {
+    //                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateGlobalTypeName, otherGlobalTypeName.Value),
+    //                            otherGlobalTypeName.TextSpan);
+    //                    }
+    //                }
+    //                //list[i].CheckDuplicateGlobalTypes(list[j]);
+    //            }
+    //        }
+    //    }
+    //    public GlobalTypeNode TryGetGlobalTypeNode(Token name) {
+    //        foreach (var ns in NamespaceNodeList) {
+    //            GlobalTypeNode gt;
+    //            if (ns.GlobalTypeMap.TryGetValue(name, out gt)) {
+    //                return gt;
+    //            }
+    //        }
+    //        return null;
+    //    }
+    //}
     internal sealed class NamespaceNode {
         internal NamespaceNode(Token uri) {
             Uri = uri;
@@ -61,24 +68,24 @@ namespace SData.Compiler {
         }
         public readonly List<ImportNode> ImportList;
         public readonly Dictionary<Token, GlobalTypeNode> GlobalTypeMap;
-        public LogicalNamespace LogicalNamespace;
+        public NamespaceInfo NamespaceInfo;
         //
-        public void ResolveImports(LogicalNamespaceMap nsMap) {
+        public void ResolveImports(NamespaceInfoMap nsInfoMap) {
             foreach (var import in ImportList) {
-                if (!nsMap.TryGetValue(import.Uri.Value, out import.LogicalNamespace)) {
+                if (!nsInfoMap.TryGetValue(import.Uri.Value, out import.NamespaceInfo)) {
                     CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidNamespaceReference, import.Uri.Value),
                         import.Uri.TextSpan);
                 }
             }
         }
-        public void CheckDuplicateGlobalTypes(NamespaceNode other) {
-            foreach (var otherGlobalTypeName in other.GlobalTypeMap.Keys) {
-                if (GlobalTypeMap.ContainsKey(otherGlobalTypeName)) {
-                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateGlobalTypeName, otherGlobalTypeName.Value),
-                        otherGlobalTypeName.TextSpan);
-                }
-            }
-        }
+        //public void CheckDuplicateGlobalTypes(NamespaceNode other) {
+        //    foreach (var otherGlobalTypeName in other.GlobalTypeMap.Keys) {
+        //        if (GlobalTypeMap.ContainsKey(otherGlobalTypeName)) {
+        //            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateGlobalTypeName, otherGlobalTypeName.Value),
+        //                otherGlobalTypeName.TextSpan);
+        //        }
+        //    }
+        //}
         public void Resolve() {
             foreach (var globalType in GlobalTypeMap.Values) {
                 globalType.Resolve();
@@ -109,15 +116,15 @@ namespace SData.Compiler {
                         CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidNamespaceAliasReference, alias.Value),
                             alias.TextSpan);
                     }
-                    result = import.LogicalNamespace.TryGetGlobalType(name);
+                    result = import.NamespaceInfo.TryGetGlobalTypeNode(name);
                 }
             }
             else {
-                result = LogicalNamespace.TryGetGlobalType(name);
+                result = NamespaceInfo.TryGetGlobalTypeNode(name);
                 if (result == null) {
                     result = AtomTypeNode.TryGet(name.Value);
                     foreach (var item in ImportList) {
-                        var globalType = item.LogicalNamespace.TryGetGlobalType(name);
+                        var globalType = item.NamespaceInfo.TryGetGlobalTypeNode(name);
                         if (globalType != null) {
                             if (result != null) {
                                 CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.AmbiguousGlobalTypeReference, name.Value),
@@ -163,11 +170,11 @@ namespace SData.Compiler {
         public ImportNode(Token uri, Token alias) {
             Uri = uri;
             Alias = alias;
-            LogicalNamespace = null;
+            NamespaceInfo = null;
         }
         public readonly Token Uri;
         public readonly Token Alias;//opt
-        public LogicalNamespace LogicalNamespace;
+        public NamespaceInfo NamespaceInfo;
     }
     internal struct QualifiableNameNode {
         public QualifiableNameNode(Token alias, Token name) {
@@ -220,7 +227,7 @@ namespace SData.Compiler {
                     CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.CircularReferenceNotAllowed), Name.TextSpan);
                 }
                 _isProcessing = true;
-                var nsInfo = Namespace.LogicalNamespace.NamespaceInfo;
+                var nsInfo = Namespace.NamespaceInfo;
                 var info = CreateInfoCore(nsInfo);
                 nsInfo.GlobalTypeMap.Add(info.Name, info);
                 _info = info;
@@ -414,7 +421,7 @@ namespace SData.Compiler {
             GlobalType = Namespace.ResolveQName(GlobalTypeQName);
         }
         public override LocalTypeInfo CreateInfo() {
-            return GlobalType.CreateInfo().CreateGlobalTypeRef();
+            return new GlobalTypeRefInfo(GlobalType.CreateInfo());
         }
     }
     //list<item>
@@ -483,15 +490,15 @@ namespace SData.Compiler {
         }
         public override LocalTypeInfo CreateInfo() {
             var itemTypeInfo = Item.CreateInfo();
-            ObjectSetKeySelector selector = null;
+            ObjectSetKeySelectorInfo selector = null;
             var isObjectSet = IsObjectSet;
             if (isObjectSet) {
-                selector = new ObjectSetKeySelector();
+                selector = new ObjectSetKeySelectorInfo();
                 var globalTypeRefInfo = (GlobalTypeRefInfo)itemTypeInfo;
                 var keyCount = KeyNameList.Count;
                 for (var i = 0; i < keyCount; ++i) {
                     var keyName = KeyNameList[i];
-                    var propInfo = globalTypeRefInfo.Class.TryGetPropertyInHierarchy(keyName.Value);
+                    var propInfo = globalTypeRefInfo.ClassType.TryGetPropertyInHierarchy(keyName.Value);
                     if (propInfo == null) {
                         CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidPropertyReference, keyName.Value), keyName.TextSpan);
                     }

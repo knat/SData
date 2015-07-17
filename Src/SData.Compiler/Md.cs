@@ -2,7 +2,7 @@
 //{
 //    class MdNamespace
 //    {
-//        GlobalTypeList as list<MdGlobalType>
+//        GlobalTypeMap as map<String, MdGlobalType>
 //    }
 
 //    class MdGlobalType[abstract]
@@ -11,16 +11,16 @@
 //        CSName as String
 //    }
 
-//    class MdEnum extends MdGlobalType
+//    class MdEnumType extends MdGlobalType
 //    {
 //    }
 
-//    class MdClass extends MdGlobalType
+//    class MdClassType extends MdGlobalType
 //    {
-//        PropertyList as list<MdProperty>
+//        PropertyMap as map<String, MdProperty>
 //    }
 
-//    class MdProperty
+//    class MdClassTypeProperty
 //    {
 //        Name as String
 //        CSName as String
@@ -37,10 +37,10 @@ using SData;
 namespace SData.Compiler {
     partial class MdNamespace {
         private MdNamespace() { }
-        internal MdNamespace(List<MdGlobalType> globalTypeList) {
-            GlobalTypeList = globalTypeList;
+        internal MdNamespace(Dictionary<string, MdGlobalType> globalTypeMap) {
+            GlobalTypeMap = globalTypeMap;
         }
-        public readonly List<MdGlobalType> GlobalTypeList;
+        public readonly Dictionary<string, MdGlobalType> GlobalTypeMap;
     }
     partial class MdGlobalType {
         protected MdGlobalType() { }
@@ -51,21 +51,21 @@ namespace SData.Compiler {
         public readonly string Name;
         public readonly string CSName;
     }
-    partial class MdEnum : MdGlobalType {
-        private MdEnum() { }
-        internal MdEnum(string name, string csName) : base(name, csName) { }
+    partial class MdEnumType : MdGlobalType {
+        private MdEnumType() { }
+        internal MdEnumType(string name, string csName) : base(name, csName) { }
     }
-    partial class MdClass : MdGlobalType {
-        private MdClass() { }
-        internal MdClass(string name, string csName, List<MdProperty> propertyList)
+    partial class MdClassType : MdGlobalType {
+        private MdClassType() { }
+        internal MdClassType(string name, string csName, Dictionary<string, MdClassTypeProperty> propertyMap)
             : base(name, csName) {
-            PropertyList = propertyList;
+            PropertyMap = propertyMap;
         }
-        public readonly List<MdProperty> PropertyList;
+        public readonly Dictionary<string, MdClassTypeProperty> PropertyMap;
     }
-    partial class MdProperty {
-        private MdProperty() { }
-        internal MdProperty(string name, string csName, bool isCSProperty) {
+    partial class MdClassTypeProperty {
+        private MdClassTypeProperty() { }
+        internal MdClassTypeProperty(string name, string csName, bool isCSProperty) {
             Name = name;
             CSName = csName;
             IsCSProperty = isCSProperty;

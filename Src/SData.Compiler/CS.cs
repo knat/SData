@@ -1498,7 +1498,7 @@ namespace SData.Compiler {
         //internal static readonly string[] Func2NameParts = new string[] { "Func`2", "System" };
 
         internal static readonly string[] ICollection1NameParts = new string[] { "ICollection`1", "Generic", "Collections", "System" };
-        internal static readonly string[] IDictionary2TNameParts = new string[] { "IDictionary`2", "Generic", "Collections", "System" };
+        internal static readonly string[] IDictionary2NameParts = new string[] { "IDictionary`2", "Generic", "Collections", "System" };
         internal static readonly string[] ISet1NameParts = new string[] { "ISet`1", "Generic", "Collections", "System" };
 
         //eg: symbol.FullNameEquals(new string[]{"List`1", "Generic", "Collections", "System"})

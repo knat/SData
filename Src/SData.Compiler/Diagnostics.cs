@@ -31,30 +31,30 @@ namespace SData.Compiler {
         ObjectSetKeyMustBeSimpleType,
 
         //
-        InvalidContractNamespaceAttribute,
-        InvalidContractNamespaceAttributeUri,
-        DuplicateContractNamespaceAttributeUri,
-        InvalidContractNamespaceAttributeNamespaceName,
-        ContractNamespaceAttributeRequired,
-        Invalid__CompilerContractNamespaceAttribute,
+        InvalidSchemaNamespaceAttribute,
+        InvalidSchemaNamespaceAttributeUri,
+        DuplicateSchemaNamespaceAttributeUri,
+        InvalidSchemaNamespaceAttributeNamespaceName,
+        SchemaNamespaceAttributeRequired,
+        Invalid__CompilerSchemaNamespaceAttribute,
         //
-        InvalidContractClassAttribute,
-        InvalidContractClassAttributeName,
-        DuplicateContractClassAttributeName,
-        ContractClassCannotBeGeneric,
-        ContractClassCannotBeStatic,
-        NonAbstractContractClassRequired,
+        InvalidSchemaClassAttribute,
+        InvalidSchemaClassAttributeName,
+        DuplicateSchemaClassAttributeName,
+        SchemaClassCannotBeGeneric,
+        SchemaClassCannotBeStatic,
+        NonAbstractSchemaClassRequired,
         ParameterlessConstructorRequired,
         //
-        InvalidContractPropertyAttribute,
-        InvalidContractPropertyAttributeName,
-        DuplicateContractPropertyAttributeName,
-        ContractPropertyCannotBeStatic,
-        ContractPropertyMustHaveGetterAndSetter,
-        ContractPropertyCannotBeIndexer,
-        ContractFieldCannotBeConst,
-        InvalidContractPropertyType,
-        InvalidContractPropertyTypeOrExplicitTypeExpected,
+        InvalidSchemaPropertyAttribute,
+        InvalidSchemaPropertyAttributeName,
+        DuplicateSchemaPropertyAttributeName,
+        SchemaPropertyCannotBeStatic,
+        SchemaPropertyMustHaveGetterAndSetter,
+        SchemaPropertyCannotBeIndexer,
+        SchemaFieldCannotBeConst,
+        InvalidSchemaPropertyType,
+        InvalidSchemaPropertyTypeOrExplicitTypeExpected,
 
 
     }
@@ -120,52 +120,52 @@ namespace SData.Compiler {
                     return "Object set key must be simple type.";
 
                 //
-                case DiagCodeEx.InvalidContractNamespaceAttribute:
-                    return "Invalid ContractNamespaceAttribute.";
-                case DiagCodeEx.InvalidContractNamespaceAttributeUri:
-                    return "Invalid ContractNamespaceAttribute uri '{0}'.".InvFormat(_msgArgs);
-                case DiagCodeEx.DuplicateContractNamespaceAttributeUri:
-                    return "Duplicate ContractNamespaceAttribute uri '{0}'.".InvFormat(_msgArgs);
-                case DiagCodeEx.InvalidContractNamespaceAttributeNamespaceName:
-                    return "Invalid ContractNamespaceAttribute namespaceName '{0}'.".InvFormat(_msgArgs);
-                case DiagCodeEx.ContractNamespaceAttributeRequired:
-                    return "ContractNamespaceAttribute required for uri '{0}'.".InvFormat(_msgArgs);
-                case DiagCodeEx.Invalid__CompilerContractNamespaceAttribute:
-                    return "Invalid __CompilerContractNamespaceAttribute. uri: '{0}', namespaceName: '{1}', assembly: '{1}'. Make sure one contract namespace is implemented in only one assembly, or you should rebuild that assembly.".InvFormat(_msgArgs);
+                case DiagCodeEx.InvalidSchemaNamespaceAttribute:
+                    return "Invalid SchemaNamespaceAttribute.";
+                case DiagCodeEx.InvalidSchemaNamespaceAttributeUri:
+                    return "Invalid SchemaNamespaceAttribute uri '{0}'.".InvFormat(_msgArgs);
+                case DiagCodeEx.DuplicateSchemaNamespaceAttributeUri:
+                    return "Duplicate SchemaNamespaceAttribute uri '{0}'.".InvFormat(_msgArgs);
+                case DiagCodeEx.InvalidSchemaNamespaceAttributeNamespaceName:
+                    return "Invalid SchemaNamespaceAttribute namespaceName '{0}'.".InvFormat(_msgArgs);
+                case DiagCodeEx.SchemaNamespaceAttributeRequired:
+                    return "SchemaNamespaceAttribute required for uri '{0}'.".InvFormat(_msgArgs);
+                case DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute:
+                    return "Invalid __CompilerSchemaNamespaceAttribute. uri: '{0}', namespaceName: '{1}', assembly: '{2}'. Make sure one schema namespace is implemented in only one assembly, or you should rebuild that assembly.".InvFormat(_msgArgs);
                 //
-                case DiagCodeEx.InvalidContractClassAttribute:
-                    return "Invalid ContractClassAttribute.";
-                case DiagCodeEx.InvalidContractClassAttributeName:
-                    return "Invalid ContractClassAttribute name '{0}'.".InvFormat(_msgArgs);
-                case DiagCodeEx.DuplicateContractClassAttributeName:
-                    return "Duplicate ContractClassAttribute name '{0}'.".InvFormat(_msgArgs);
-                case DiagCodeEx.ContractClassCannotBeGeneric:
-                    return "Contract class cannot be generic.";
-                case DiagCodeEx.ContractClassCannotBeStatic:
-                    return "Contract class cannot be static.";
-                case DiagCodeEx.NonAbstractContractClassRequired:
+                case DiagCodeEx.InvalidSchemaClassAttribute:
+                    return "Invalid SchemaClassAttribute.";
+                case DiagCodeEx.InvalidSchemaClassAttributeName:
+                    return "Invalid SchemaClassAttribute name '{0}'.".InvFormat(_msgArgs);
+                case DiagCodeEx.DuplicateSchemaClassAttributeName:
+                    return "Duplicate SchemaClassAttribute name '{0}'.".InvFormat(_msgArgs);
+                case DiagCodeEx.SchemaClassCannotBeGeneric:
+                    return "Schema class cannot be generic.";
+                case DiagCodeEx.SchemaClassCannotBeStatic:
+                    return "Schema class cannot be static.";
+                case DiagCodeEx.NonAbstractSchemaClassRequired:
                     return "Non-abstract class required.";
                 case DiagCodeEx.ParameterlessConstructorRequired:
                     return "Parameterless constructor required.";
                 //
-                case DiagCodeEx.InvalidContractPropertyAttribute:
-                    return "Invalid ContractPropertyAttribute.";
-                case DiagCodeEx.InvalidContractPropertyAttributeName:
-                    return "Invalid ContractPropertyAttribute name '{0}'.".InvFormat(_msgArgs);
-                case DiagCodeEx.DuplicateContractPropertyAttributeName:
-                    return "Duplicate ContractPropertyAttribute name '{0}'.".InvFormat(_msgArgs);
-                case DiagCodeEx.ContractPropertyCannotBeStatic:
-                    return "Contract property/field cannot be static.";
-                case DiagCodeEx.ContractPropertyMustHaveGetterAndSetter:
-                    return "Contract property must have getter and setter.";
-                case DiagCodeEx.ContractPropertyCannotBeIndexer:
-                    return "Contract property cannot be indexer.";
-                case DiagCodeEx.ContractFieldCannotBeConst:
-                    return "Contract field cannot be const.";
-                case DiagCodeEx.InvalidContractPropertyType:
-                    return "Invalid contract property/field{0} type. {1} expected.".InvFormat(_msgArgs);
-                case DiagCodeEx.InvalidContractPropertyTypeOrExplicitTypeExpected:
-                    return "Invalid contract property/field{0} type. {1} expected, or you should declare the C# partial class explicitly.".InvFormat(_msgArgs);
+                case DiagCodeEx.InvalidSchemaPropertyAttribute:
+                    return "Invalid SchemaPropertyAttribute.";
+                case DiagCodeEx.InvalidSchemaPropertyAttributeName:
+                    return "Invalid SchemaPropertyAttribute name '{0}'.".InvFormat(_msgArgs);
+                case DiagCodeEx.DuplicateSchemaPropertyAttributeName:
+                    return "Duplicate SchemaPropertyAttribute name '{0}'.".InvFormat(_msgArgs);
+                case DiagCodeEx.SchemaPropertyCannotBeStatic:
+                    return "Schema property/field cannot be static.";
+                case DiagCodeEx.SchemaPropertyMustHaveGetterAndSetter:
+                    return "Schema property must have getter and setter.";
+                case DiagCodeEx.SchemaPropertyCannotBeIndexer:
+                    return "Schema property cannot be indexer.";
+                case DiagCodeEx.SchemaFieldCannotBeConst:
+                    return "Schema field cannot be const.";
+                case DiagCodeEx.InvalidSchemaPropertyType:
+                    return "Invalid schema property/field{0} type. {1} expected.".InvFormat(_msgArgs);
+                case DiagCodeEx.InvalidSchemaPropertyTypeOrExplicitTypeExpected:
+                    return "Invalid schema property/field{0} type. {1} expected, or you should declare the C# partial class explicitly.".InvFormat(_msgArgs);
 
                 default:
                     throw new InvalidOperationException("Invalid code: " + Code.ToString());
