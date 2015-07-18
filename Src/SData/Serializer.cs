@@ -16,19 +16,19 @@ namespace SData {
             result = null;
             return false;
         }
-        public static bool TryLoad<T>(string filePath, string text, LoadingContext context, ClassTypeMd classTypeMd, out T result) where T : class {
-            return TryLoad<T>(filePath, new SimpleStringReader(text), context, classTypeMd, out result);
-        }
-        public static void Save(object obj, ClassTypeMd classTypeMd, TextWriter writer, string indent = "\t", string newLine = "\n") {
+        //public static bool TryLoad<T>(string filePath, string text, LoadingContext context, ClassTypeMd classTypeMd, out T result) where T : class {
+        //    return TryLoad<T>(filePath, new SimpleStringReader(text), context, classTypeMd, out result);
+        //}
+        public static void Save(object obj, ClassTypeMd classTypeMd, TextWriter writer, string indentString = "\t", string newLineString = "\n") {
             if (writer == null) throw new ArgumentNullException("writer");
             var sb = StringBuilderBuffer.Acquire();
-            Save(obj, classTypeMd, sb, indent, newLine);
+            Save(obj, classTypeMd, sb, indentString, newLineString);
             writer.Write(sb.ToStringAndRelease());
         }
-        public static void Save(object obj, ClassTypeMd classTypeMd, StringBuilder stringBuilder, string indent = "\t", string newLine = "\n") {
+        public static void Save(object obj, ClassTypeMd classTypeMd, StringBuilder stringBuilder, string indentString = "\t", string newLineString = "\n") {
             if (obj == null) throw new ArgumentNullException("obj");
             if (classTypeMd == null) throw new ArgumentNullException("classTypeMd");
-            SaveClassValue(true, obj, classTypeMd, new SavingContext(stringBuilder, indent, newLine));
+            SaveClassValue(true, obj, classTypeMd, new SavingContext(stringBuilder, indentString, newLineString));
         }
         private static void SaveClassValue(bool isRoot, object obj, ClassTypeMd declaredClsMd, SavingContext context) {
             if (declaredClsMd != null) {

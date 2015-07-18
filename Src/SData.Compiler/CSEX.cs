@@ -46,9 +46,9 @@ namespace SData.Compiler {
                                         }
                                         if (mdData != null) {
                                             var ldCtx = new LoadingContext();
-                                            MdNamespace mdns = null; ;
-                                            //if (MdNamespace.TryLoad("__CompilerSchemaNamespaceAttribute", new SimpleStringReader(mdData), ldCtx, out mdNs)) {
-                                            if (nsInfo.TrySetMd(mdns)) {
+                                            RefMdNamespace mdns = null; ;
+                                            //if (MdNamespace.TryLoad("__CompilerSchemaNamespaceAttributeData", new SimpleStringReader(mdData), ldCtx, out mdNs)) {
+                                            if (nsInfo.TrySetRefMd(mdns)) {
                                                 refOk = true;
                                             }
                                             //}
@@ -93,7 +93,7 @@ namespace SData.Compiler {
             }
             return null;
         }
-        internal static void MapClasses(NamespaceInfoMap nsInfoMap, INamespaceSymbol nsSymbol) {
+        internal static void MapGlobalTypes(NamespaceInfoMap nsInfoMap, INamespaceSymbol nsSymbol) {
             if (!nsSymbol.IsGlobalNamespace) {
                 foreach (var nsInfo in nsInfoMap.Values) {
                     if (nsSymbol.FullNameEquals(nsInfo.DottedName.NameParts)) {
@@ -164,7 +164,7 @@ namespace SData.Compiler {
                 }
             }
             foreach (var subNsSymbol in nsSymbol.GetNamespaceMembers()) {
-                MapClasses(nsInfoMap, subNsSymbol);
+                MapGlobalTypes(nsInfoMap, subNsSymbol);
             }
         }
         #region
@@ -321,8 +321,8 @@ namespace SData.Compiler {
         internal static AliasQualifiedNameSyntax SDataName {
             get { return CS.GlobalAliasQualifiedName("SData"); }
         }
-        internal static string UserAssemblyMetadataName(string assName) {
-            return "AssemblyMetadata_" + ToIdString(assName);
+        internal static string SDataAssemblyMdName(string assName) {
+            return "SDataAssemblyMd_" + ToIdString(assName);
         }
         internal static QualifiedNameSyntax __CompilerSchemaNamespaceAttributeName {
             get { return CS.QualifiedName(SDataName, "__CompilerSchemaNamespaceAttribute"); }
@@ -353,6 +353,9 @@ namespace SData.Compiler {
         }
         internal static ArrayTypeSyntax ClassTypePropertyMdArrayType {
             get { return CS.OneDimArrayType(ClassTypePropertyMdName); }
+        }
+        internal static QualifiedNameSyntax NullableTypeMdName {
+            get { return CS.QualifiedName(SDataName, "NullableTypeMd"); }
         }
         internal static QualifiedNameSyntax GlobalTypeRefMdName {
             get { return CS.QualifiedName(SDataName, "GlobalTypeRefMd"); }
@@ -396,6 +399,9 @@ namespace SData.Compiler {
         }
         internal static MemberAccessExpressionSyntax SerializerExpr {
             get { return CS.MemberAccessExpr(SDataName, "Serializer"); }
+        }
+        internal static MemberAccessExpressionSyntax AtomTypeMdExpr {
+            get { return CS.MemberAccessExpr(SDataName, "AtomTypeMd"); }
         }
 
 

@@ -22,8 +22,8 @@ namespace SData.Compiler {
             return SyntaxFactory.Identifier(default(SyntaxTriviaList), SyntaxKind.IdentifierToken,
                unescapedId.EscapeId(), unescapedId, default(SyntaxTriviaList));
         }
-        internal static IdentifierNameSyntax IdName(string name) {
-            return SyntaxFactory.IdentifierName(Id(name));
+        internal static IdentifierNameSyntax IdName(string escapedId) {
+            return SyntaxFactory.IdentifierName(Id(escapedId));
         }
         internal static IdentifierNameSyntax IdName(SyntaxToken identifier) {
             return SyntaxFactory.IdentifierName(identifier);
@@ -562,6 +562,10 @@ namespace SData.Compiler {
         //global::System.IDisposable
         internal static QualifiedNameSyntax IDisposableName {
             get { return QualifiedName(GlobalSystemName, "IDisposable"); }
+        }
+        //global::System.Nullable<T>
+        internal static QualifiedNameSyntax NullableOf(TypeSyntax type) {
+            return SyntaxFactory.QualifiedName(GlobalSystemName, GenericName("Nullable", type));
         }
         //global::System.Action
         internal static QualifiedNameSyntax ActionName {
@@ -1145,8 +1149,18 @@ namespace SData.Compiler {
         internal static ObjectCreationExpressionSyntax NewObjWithCollInitExpr(TypeSyntax type, IEnumerable<ExpressionSyntax> initExprs) {
             return SyntaxFactory.ObjectCreationExpression(type, SyntaxFactory.ArgumentList(), CollectionInitializer(initExprs));
         }
+        internal static ExpressionSyntax NewObjWithCollInitOrNullExpr(TypeSyntax type, IEnumerable<ExpressionSyntax> initExprs) {
+            var initer = CollectionInitializer(initExprs);
+            if (initer == null) return NullLiteral;
+            return SyntaxFactory.ObjectCreationExpression(type, SyntaxFactory.ArgumentList(), initer);
+        }
         internal static ObjectCreationExpressionSyntax NewObjWithCollInitExpr(TypeSyntax type, IEnumerable<IEnumerable<ExpressionSyntax>> initExprs) {
             return SyntaxFactory.ObjectCreationExpression(type, SyntaxFactory.ArgumentList(), CollectionInitializer(initExprs));
+        }
+        internal static ExpressionSyntax NewObjWithCollInitOrNullExpr(TypeSyntax type, IEnumerable<IEnumerable<ExpressionSyntax>> initExprs) {
+            var initer = CollectionInitializer(initExprs);
+            if (initer == null) return NullLiteral;
+            return SyntaxFactory.ObjectCreationExpression(type, SyntaxFactory.ArgumentList(), initer);
         }
         private static InitializerExpressionSyntax ObjectInitializer(IEnumerable<ExpressionSyntax> exprs) {
             var exprList = SyntaxFactory.SeparatedList(exprs);

@@ -53,7 +53,7 @@
     <Compile Include="DottedName.cs" />
     <Compile Include="CSEX.cs" />
     <Compile Include="Infos.cs" />
-    <Compile Include="Md.cs" />
+    <Compile Include="RefMd.cs" />
     <Compile Include="Nodes.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="CompilerContext.cs" />

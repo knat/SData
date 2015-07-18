@@ -503,7 +503,7 @@ namespace SData.Compiler {
                         CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidPropertyReference, keyName.Value), keyName.TextSpan);
                     }
                     var propTypeInfo = propInfo.Type;
-                    if (propTypeInfo.IsNullable) {
+                    if (propTypeInfo.Kind == TypeKind.Nullable) {
                         CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ObjectSetKeyCannotBeNullable), keyName.TextSpan);
                     }
                     if (propTypeInfo.Kind.IsSimple()) {
