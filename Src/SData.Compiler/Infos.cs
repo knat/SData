@@ -181,6 +181,11 @@ namespace SData.Compiler {
         //public readonly TypeSyntax NullableTypeSyntax;
         //public readonly string TypeDisplayName;
         //public readonly string NullableTypeDisplayName;
+        public bool IsClrRefType {
+            get {
+                return Kind.IsClrRefAtom();
+            }
+        }
         public static AtomTypeInfo Get(TypeKind kind) {
             return _map[kind];
         }
@@ -264,25 +269,139 @@ namespace SData.Compiler {
             return CS.MemberAccessExpr(FullExprSyntax, ReflectionExtensions.ThisMetadataNameStr);
         }
     }
+    internal sealed class KeyInfo : List<PropertyInfo> {
+        public ExpressionSyntax GetMemberAccessSyntax(ExpressionSyntax head) {
+            var ma = CS.MemberAccessExpr(head, this[0].CSName.EscapeId());
+            var count = Count;
+            if (count == 1) {
+                //>x.a
+                return ma;
+            }
+            //> (x.a) ? ((.b) ? (.c))
+            ExpressionSyntax result = null;
+            for (var i = count - 1; i >= 1; --i) {
+                var mbe = CS.MemberBindingExpr(CS.IdName(this[i].CSName.EscapeId()));
+                if (result == null) {
+                    result = mbe;
+                }
+                else {
+                    result = CS.ConditionalAccessExpr(mbe, result);
+                }
+            }
+            return CS.ConditionalAccessExpr(ma, result);
+        }
+        public ExpressionSyntax GetGetHashCodeSyntax() {
+            var count = Count;
+            if (count == 1) {
+                var prop = this[0];
+                if ((prop.Type as GlobalTypeRefInfo).IsClrRefType) {
+                    //>this.p?.GetHashCode() ?? 0
+                    return CS.CoalesceExpr(CS.ConditionalAccessExpr(CS.MemberAccessExpr(CS.ThisExpr(), prop.CSName.EscapeId()),
+                        CS.InvoExpr(CS.MemberBindingExpr(CS.IdName("GetHashCode")))), CS.Literal(0));
+                }
+                else {
+                    //this.p.GetHashCode()
+                    return CS.InvoExpr(CS.MemberAccessExpr(CS.MemberAccessExpr(CS.ThisExpr(), prop.CSName.EscapeId()), "GetHashCode"));
+                }
+            }
+            //> this.a ? .b ? .c ? .GetHashCode() ?? 0
+            //> this.a ? .b ? .c .GetHashCode() ?? 0
+            ExpressionSyntax result = null;
+            for (var i = count - 1; i >= 1; --i) {
+                var prop = this[i];
+                if (result == null) {
+                    if ((prop.Type as GlobalTypeRefInfo).IsClrRefType) {
+                        result = CS.ConditionalAccessExpr(CS.MemberBindingExpr(CS.IdName(prop.CSName.EscapeId())),
+                            CS.InvoExpr(CS.MemberBindingExpr(CS.IdName("GetHashCode"))));
+                    }
+                    else {
+                        result = CS.InvoExpr(CS.MemberAccessExpr(CS.MemberBindingExpr(CS.IdName(prop.CSName.EscapeId())), "GetHashCode"));
+                    }
+                }
+                else {
+                    result = CS.ConditionalAccessExpr(CS.MemberBindingExpr(CS.IdName(prop.CSName.EscapeId())), result);
+                }
+
+            }
+            return CS.CoalesceExpr(CS.ConditionalAccessExpr(CS.MemberAccessExpr(CS.ThisExpr(), this[0].CSName.EscapeId()), result), CS.Literal(0));
+        }
+    }
     internal sealed class ClassTypeInfo : GlobalTypeInfo {
         public ClassTypeInfo(NamespaceInfo ns, string name, bool isAbstract, bool isSealed, ClassTypeInfo baseClass,
-            Dictionary<string, ClassTypePropertyInfo> propertyMap)
+            List<KeyNode> keyNodeList, Dictionary<string, PropertyInfo> propertyMap)
             : base(TypeKind.Class, ns, name) {
             IsAbstract = isAbstract;
             IsSealed = isSealed;
             BaseClass = baseClass;
             PropertyMap = propertyMap;
+            List<KeyInfo> keyList = null;
+            if (keyNodeList != null) {
+                if (baseClass != null && baseClass.HasKey) {
+                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicatePropertyName),
+                        keyNodeList[0][0].TextSpan);
+                }
+                keyList = new List<KeyInfo>();
+                foreach (var keyNode in keyNodeList) {
+                    var key = new KeyInfo();
+                    var clsType = this;
+                    var tkCount = keyNode.Count;
+                    for (var i = 0; i < tkCount; ++i) {
+                        var token = keyNode[i];
+                        var prop = clsType.TryGetPropertyInHierarchy(token.Value);
+                        if (prop == null) {
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicatePropertyName, token.Value),
+                                token.TextSpan);
+                        }
+                        var propType = prop.Type;
+                        if (propType.IsNullable) {
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicatePropertyName, token.Value),
+                                token.TextSpan);
+                        }
+                        if (propType.IsCollection) {
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicatePropertyName, token.Value),
+                                token.TextSpan);
+                        }
+                        if (propType.IsClass) {
+                            clsType = (propType as GlobalTypeRefInfo).ClassType;
+                            if (i == tkCount - 1 && !clsType.HasKey) {
+                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicatePropertyName, token.Value),
+                                    token.TextSpan);
+                            }
+                        }
+                        else {
+                            if (i < tkCount - 1) {
+                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicatePropertyName, token.Value),
+                                    token.TextSpan);
+                            }
+                        }
+                        key.Add(prop);
+                    }
+                    keyList.Add(key);
+                }
+            }
+            KeyList = keyList;
         }
         public readonly bool IsAbstract;
         public readonly bool IsSealed;
         public readonly ClassTypeInfo BaseClass;//opt
-        public readonly Dictionary<string, ClassTypePropertyInfo> PropertyMap;//only includes this class's props 
-        public ClassTypePropertyInfo TryGetProperty(string name) {
-            ClassTypePropertyInfo p;
+        public readonly List<KeyInfo> KeyList;//opt
+        public readonly Dictionary<string, PropertyInfo> PropertyMap;//only includes this class's props 
+        public bool HasKey {
+            get {
+                for (var info = this; info != null; info = info.BaseClass) {
+                    if (info.KeyList != null) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+        public PropertyInfo TryGetProperty(string name) {
+            PropertyInfo p;
             PropertyMap.TryGetValue(name, out p);
             return p;
         }
-        public ClassTypePropertyInfo TryGetPropertyInHierarchy(string name) {
+        public PropertyInfo TryGetPropertyInHierarchy(string name) {
             for (var info = this; info != null; info = info.BaseClass) {
                 var p = info.TryGetProperty(name);
                 if (p != null) {
@@ -416,8 +535,8 @@ namespace SData.Compiler {
                     CS.OutParameter(FullNameSyntax, "result")
                 },
                 CS.ReturnStm(CS.InvoExpr(CS.MemberAccessExpr(CSEX.SerializerExpr, CS.GenericName("TryLoad", FullNameSyntax)),
-                    SyntaxFactory.Argument(CS.IdName("filePath")), SyntaxFactory.Argument(CS.IdName("reader")), SyntaxFactory.Argument(CS.IdName("context")),
-                    SyntaxFactory.Argument(CS.IdName(ReflectionExtensions.ThisMetadataNameStr)), CS.OutArgument("result")))));
+                    CS.Argument(CS.IdName("filePath")), CS.Argument(CS.IdName("reader")), CS.Argument(CS.IdName("context")),
+                    CS.Argument(CS.IdName(ReflectionExtensions.ThisMetadataNameStr)), CS.OutArgument("result")))));
             if (baseClass == null) {
                 //>public void Save(TextWriter writer, string indentString = "\t", string newLineString = "\n") {
                 //>  SData.Serializer.Save(this, __Metadata, writer, indentString, newLineString);
@@ -438,7 +557,7 @@ namespace SData.Compiler {
                         CS.Parameter(CS.StringType, "indentString", CS.Literal("\t")),
                         CS.Parameter(CS.StringType, "newLineString", CS.Literal("\n"))
                     },
-                    CS.ExprStm(CS.InvoExpr(CS.MemberAccessExpr(CSEX.SerializerExpr, "Save"), SyntaxFactory.ThisExpression(),
+                    CS.ExprStm(CS.InvoExpr(CS.MemberAccessExpr(CSEX.SerializerExpr, "Save"), CS.ThisExpr(),
                         CS.IdName(ReflectionExtensions.MetadataNameStr), CS.IdName("stringBuilder"), CS.IdName("indentString"), CS.IdName("newLineString")
                     ))));
             }
@@ -460,13 +579,93 @@ namespace SData.Compiler {
                 new StatementSyntax[] { 
                     CS.ReturnStm(CS.IdName(ReflectionExtensions.ThisMetadataNameStr))
                 }));
+            TypeSyntax itfType = null;
+            var keyList = KeyList;
+            if (keyList != null) {
+                itfType = CS.IEquatableOf(FullNameSyntax);
+                //>public bool Equals(TYPE other) {
+                //>    if ((object)this == (object)other) return true;
+                //>    if ((object)other == null) return false;
+                //>    return this.p1?.p2 == other.p1?.p2 && this.p2 == other.p2;
+                //>}
+                ExpressionSyntax retExpr = null;
+                foreach (var key in keyList) {
+                    var expr = CS.EqualsExpr(key.GetMemberAccessSyntax(CS.ThisExpr()), key.GetMemberAccessSyntax(CS.IdName("other")));
+                    if (retExpr == null) {
+                        retExpr = expr;
+                    }
+                    else {
+                        retExpr = CS.LogicalAndExpr(retExpr, expr);
+                    }
+                }
+                memberList.Add(CS.Method(CS.PublicTokenList, CS.VoidType, "Equals", new[] { CS.Parameter(FullNameSyntax, "other") },
+                    CS.IfStm(CS.EqualsExpr(CS.CastExpr(CS.ObjectType, CS.ThisExpr()), CS.CastExpr(CS.ObjectType, CS.IdName("other"))),
+                        CS.ReturnStm(CS.TrueLiteral)),
+                    CS.IfStm(CS.EqualsExpr(CS.CastExpr(CS.ObjectType, CS.IdName("other")), CS.NullLiteral),
+                        CS.ReturnStm(CS.FalseLiteral)),
+                    CS.ReturnStm(retExpr)
+                    ));
+                //>public override bool Equals(object other) {
+                //>    return Equals(other as TYPE);
+                //>}
+                memberList.Add(CS.Method(CS.PublicOverrideTokenList, CS.BoolType, "Equals", new[] { CS.Parameter(CS.ObjectType, "other") },
+                    CS.ReturnStm(CS.InvoExpr(CS.IdName("Equals"), CS.AsExpr(CS.IdName("other"), FullNameSyntax)))
+                    ));
+                //>public override int GetHashCode() {
+                //>    return ...;
+                //>}
+                var keyCount = keyList.Count;
+                if (keyCount == 1) {
+                    retExpr = keyList[0].GetGetHashCodeSyntax();
+                }
+                else {
+                    //>SData.Extensions.CombineHash()
+                    keyCount = Math.Min(keyCount, 3);
+                    var args = new ArgumentSyntax[keyCount];
+                    for (var i = 0; i < keyCount; ++i) {
+                        args[i] = CS.Argument(keyList[i].GetGetHashCodeSyntax());
+                    }
+                    retExpr = CS.InvoExpr(CS.MemberAccessExpr(CSEX.ExtensionsExpr, "CombineHash"), args);
+                }
+                memberList.Add(CS.Method(CS.PublicOverrideTokenList, CS.IntType, "GetHashCode", null, CS.ReturnStm(retExpr)));
 
+                //>public static bool operator ==(TYPE left, TYPE right) {
+                //>    if ((object)left == null) {
+                //>        return (object)right == null;
+                //>    }
+                //>    return left.Equals(right);
+                //>}
+                memberList.Add(CS.OperatorDecl(CS.BoolType, CS.EqualsEqualsToken, new[] { CS.Parameter(FullNameSyntax, "left"), CS.Parameter(FullNameSyntax, "right") },
+                    CS.IfStm(CS.EqualsExpr(CS.CastExpr(CS.ObjectType, CS.IdName("left")), CS.NullLiteral),
+                        CS.ReturnStm(CS.EqualsExpr(CS.CastExpr(CS.ObjectType, CS.IdName("right")), CS.NullLiteral))),
+                    CS.ReturnStm(CS.InvoExpr(CS.MemberAccessExpr(CS.IdName("left"), "Equals"), CS.IdName("right")))
+                    ));
+                //>public static bool operator !=(TYPE left, TYPE right) {
+                //>    return !(left == right);
+                //>}
+                memberList.Add(CS.OperatorDecl(CS.BoolType, CS.ExclamationEqualsToken, new[] { CS.Parameter(FullNameSyntax, "left"), CS.Parameter(FullNameSyntax, "right") },
+                    CS.ReturnStm(CS.LogicalNotExpr(CS.ParedExpr(CS.EqualsExpr(CS.IdName("left"), CS.IdName("right")))))
+                    ));
+            }
+            BaseListSyntax baseList;
+            if (baseClass != null && itfType != null) {
+                baseList = CS.BaseList(baseClass.FullNameSyntax, itfType);
+            }
+            else if (baseClass != null) {
+                baseList = CS.BaseList(baseClass.FullNameSyntax);
+            }
+            else if (itfType != null) {
+                baseList = CS.BaseList(itfType);
+            }
+            else {
+                baseList = null;
+            }
             list.Add(SyntaxFactory.ClassDeclaration(
                 attributeLists: default(SyntaxList<AttributeListSyntax>),
                 modifiers: IsAbstract ? CS.PublicAbstractPartialTokenList : CS.PublicPartialTokenList,
                 identifier: CS.UnescapedId(DottedName.LastName),
                 typeParameterList: null,
-                baseList: baseClass == null ? null : CS.BaseList(baseClass.FullNameSyntax),
+                baseList: baseList,
                 constraintClauses: default(SyntaxList<TypeParameterConstraintClauseSyntax>),
                 members: SyntaxFactory.List(memberList)
                 ));
@@ -475,8 +674,8 @@ namespace SData.Compiler {
             return CS.MemberAccessExpr(FullExprSyntax, ReflectionExtensions.ThisMetadataNameStr);
         }
     }
-    internal sealed class ClassTypePropertyInfo {
-        public ClassTypePropertyInfo(string name, LocalTypeInfo type) {
+    internal sealed class PropertyInfo {
+        public PropertyInfo(string name, LocalTypeInfo type) {
             Name = name;
             Type = type;
         }
@@ -516,11 +715,22 @@ namespace SData.Compiler {
         protected LocalTypeInfo(TypeKind kind)
             : base(kind) {
         }
-        //public bool IsNullable {
-        //    get {
-        //        return Kind == TypeKind.Nullable;
-        //    }
-        //}
+        public bool IsNullable {
+            get { return Kind == TypeKind.Nullable; }
+        }
+        public bool IsAtom {
+            get { return Kind.IsAtom(); }
+        }
+        public bool IsEnum {
+            get { return Kind == TypeKind.Enum; }
+        }
+        public bool IsClass {
+            get { return Kind == TypeKind.Class; }
+        }
+        public bool IsCollection {
+            get { return this is CollectionInfo; }
+        }
+
         //public NonNullableTypeInfo NonNullableType {
         //    get {
         //        var nnt = this as NonNullableTypeInfo;
@@ -558,7 +768,7 @@ namespace SData.Compiler {
                 if (gtr != null) {
                     var effAtomType = gtr.EffectiveAtomType;
                     if (effAtomType != null) {
-                        return !effAtomType.Kind.IsClrRefAtom();
+                        return !effAtomType.IsClrRefType;
                     }
                 }
                 return false;
@@ -603,15 +813,6 @@ namespace SData.Compiler {
             GlobalType = globalType;
         }
         public readonly GlobalTypeInfo GlobalType;
-        public bool IsAtom {
-            get { return Kind.IsAtom(); }
-        }
-        public bool IsEnum {
-            get { return Kind == TypeKind.Enum; }
-        }
-        public bool IsClass {
-            get { return Kind == TypeKind.Class; }
-        }
         public ClassTypeInfo ClassType {
             get {
                 return GlobalType as ClassTypeInfo;
@@ -640,6 +841,15 @@ namespace SData.Compiler {
                 return AtomType;
             }
         }
+        public bool IsClrRefType {
+            get {
+                var effAtomType = EffectiveAtomType;
+                if (effAtomType != null) {
+                    return effAtomType.IsClrRefType;
+                }
+                return true;
+            }
+        }
         public override void CheckSymbol(ISymbol propSymbol, ITypeSymbol typeSymbol, string parentTypeName) {
             if (IsClass) {
                 if (!typeSymbol.FullNameEquals(GlobalType.DottedName.NameParts)) {
@@ -666,34 +876,30 @@ namespace SData.Compiler {
             return CS.NewObjExpr(CSEX.GlobalTypeRefMdName, GlobalType.MetadataRefSyntax);
         }
     }
-    internal sealed class ObjectSetKeySelectorInfo : List<ClassTypePropertyInfo> {
-        public GlobalTypeRefInfo KeyType {
-            get { return this[Count - 1].Type as GlobalTypeRefInfo; }
-        }
-    }
+    //internal sealed class ObjectSetKeySelectorInfo : List<PropertyInfo> {
+    //    public GlobalTypeRefInfo KeyType {
+    //        get { return this[Count - 1].Type as GlobalTypeRefInfo; }
+    //    }
+    //}
     internal sealed class CollectionInfo : NonNullableTypeInfo {
-        public CollectionInfo(TypeKind kind, LocalTypeInfo itemOrValueType, GlobalTypeRefInfo mapKeyType,
-            ObjectSetKeySelectorInfo objectSetKeySelector)
+        public CollectionInfo(TypeKind kind, LocalTypeInfo itemOrValueType, GlobalTypeRefInfo mapKeyType)
             : base(kind) {
             ItemOrValueType = itemOrValueType;
             MapKeyType = mapKeyType;
-            ObjectSetKeySelector = objectSetKeySelector;
+            //ObjectSetKeySelector = objectSetKeySelector;
         }
         public readonly LocalTypeInfo ItemOrValueType;
         public readonly GlobalTypeRefInfo MapKeyType;//opt, for map
-        public readonly ObjectSetKeySelectorInfo ObjectSetKeySelector;//opt
+        //public readonly ObjectSetKeySelectorInfo ObjectSetKeySelector;//opt
         public INamedTypeSymbol CollectionClassSymbol;//opt
         public bool IsList {
             get { return Kind == TypeKind.List; }
         }
+        public bool IsSet {
+            get { return Kind == TypeKind.Set; }
+        }
         public bool IsMap {
             get { return Kind == TypeKind.Map; }
-        }
-        public bool IsObjectSet {
-            get { return Kind == TypeKind.ObjectSet; }
-        }
-        public bool IsSimpleSet {
-            get { return Kind == TypeKind.SimpleSet; }
         }
         public override void CheckSymbol(ISymbol propSymbol, ITypeSymbol typeSymbol, string parentTypeName) {
             if (IsList) {
@@ -716,17 +922,17 @@ namespace SData.Compiler {
                 MapKeyType.CheckSymbol(propSymbol, typeArgs[0], parentTypeName + " <map key>");
                 ItemOrValueType.CheckSymbol(propSymbol, typeArgs[1], parentTypeName + " <map value>");
             }
-            else if (IsObjectSet) {
-                var itfSymbol = typeSymbol.GetSelfOrInterface(CSEX.IObjectSet2NameParts);
-                if (itfSymbol == null) {
-                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaPropertyType,
-                        parentTypeName, "SData.IObjectSet<TKey, TObject> or implementing class"),
-                        CSEX.GetTextSpan(propSymbol));
-                }
-                var typeArgs = itfSymbol.TypeArguments;
-                ObjectSetKeySelector.KeyType.CheckSymbol(propSymbol, typeArgs[0], parentTypeName + " <object set key>");
-                ItemOrValueType.CheckSymbol(propSymbol, typeArgs[1], parentTypeName + " <object set item>");
-            }
+            //else if (IsObjectSet) {
+            //    var itfSymbol = typeSymbol.GetSelfOrInterface(CSEX.IObjectSet2NameParts);
+            //    if (itfSymbol == null) {
+            //        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaPropertyType,
+            //            parentTypeName, "SData.IObjectSet<TKey, TObject> or implementing class"),
+            //            CSEX.GetTextSpan(propSymbol));
+            //    }
+            //    var typeArgs = itfSymbol.TypeArguments;
+            //    ObjectSetKeySelector.KeyType.CheckSymbol(propSymbol, typeArgs[0], parentTypeName + " <object set key>");
+            //    ItemOrValueType.CheckSymbol(propSymbol, typeArgs[1], parentTypeName + " <object set item>");
+            //}
             else {//SimpleSet
                 var itfSymbol = typeSymbol.GetSelfOrInterface(CS.ISet1NameParts);
                 if (itfSymbol == null) {
@@ -766,30 +972,29 @@ namespace SData.Compiler {
             else if (IsMap) {
                 return CS.DictionaryOf(MapKeyType.TypeSyntax, ItemOrValueType.TypeSyntax);
             }
-            else if (IsObjectSet) {
-                return CSEX.ObjectSetOf(ObjectSetKeySelector.KeyType.TypeSyntax, ItemOrValueType.TypeSyntax);
-            }
+            //else if (IsObjectSet) {
+            //    return CSEX.ObjectSetOf(ObjectSetKeySelector.KeyType.TypeSyntax, ItemOrValueType.TypeSyntax);
+            //}
             else {//SimpleSet
                 return CS.HashSetOf(ItemOrValueType.TypeSyntax);
             }
         }
         protected override ExpressionSyntax GetMetadataSyntax() {
-            ExpressionSyntax objectSetKeySelectorExpr = null;
-            if (IsObjectSet) {
-                //>(Func<ObjType, KeyType>)(obj => obj.Prop1.Prop2)
-                ExpressionSyntax bodyExpr = CS.IdName("obj");
-                foreach (var propInfo in ObjectSetKeySelector) {
-                    bodyExpr = CS.MemberAccessExpr(bodyExpr, CS.EscapeId(propInfo.CSName));
-                }
-                objectSetKeySelectorExpr = CS.CastExpr(
-                    CS.FuncOf(ItemOrValueType.TypeSyntax, ObjectSetKeySelector.KeyType.TypeSyntax),
-                    CS.ParedExpr(CS.SimpleLambdaExpr("obj", bodyExpr)));
-            }
-            //>new CollectionTypeMd(kind, itemOrValueType, mapKeyType, objectSetKeySelector, clrType)
+            //ExpressionSyntax objectSetKeySelectorExpr = null;
+            //if (IsObjectSet) {
+            //    //>(Func<ObjType, KeyType>)(obj => obj.Prop1.Prop2)
+            //    ExpressionSyntax bodyExpr = CS.IdName("obj");
+            //    foreach (var propInfo in ObjectSetKeySelector) {
+            //        bodyExpr = CS.MemberAccessExpr(bodyExpr, CS.EscapeId(propInfo.CSName));
+            //    }
+            //    objectSetKeySelectorExpr = CS.CastExpr(
+            //        CS.FuncOf(ItemOrValueType.TypeSyntax, ObjectSetKeySelector.KeyType.TypeSyntax),
+            //        CS.ParedExpr(CS.SimpleLambdaExpr("obj", bodyExpr)));
+            //}
+            //>new CollectionTypeMd(kind, itemOrValueType, mapKeyType, clrType)
             return CS.NewObjExpr(CSEX.CollectionMdName,
                 CSEX.Literal(Kind), ItemOrValueType.MetadataSyntax,
                 IsMap ? MapKeyType.MetadataSyntax : CS.NullLiteral,
-                objectSetKeySelectorExpr ?? CS.NullLiteral,
                 CS.TypeOfExpr(TypeSyntax)
                 );
         }

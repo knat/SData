@@ -11,6 +11,7 @@ namespace SData.Compiler {
         public const string EnumKeyword = "enum";
         public const string ExtendsKeyword = "extends";
         public const string ImportKeyword = "import";
+        public const string KeyKeyword = "key";
         public const string ListKeyword = "list";
         public const string MapKeyword = "map";
         public const string NamespaceKeyword = "namespace";
@@ -24,6 +25,7 @@ namespace SData.Compiler {
             EnumKeyword,
             ExtendsKeyword,
             ImportKeyword,
+            KeyKeyword,
             ListKeyword,
             MapKeyword,
             NamespaceKeyword,
@@ -174,27 +176,42 @@ namespace SData.Compiler {
             if (Keyword(ParserConstants.ClassKeyword)) {
                 var name = IdentifierExpected();
                 CheckDuplicateGlobalType(ns, name);
-                var abstractOrSealed = default(Token);
-                if (Token('[')) {
-                    if (!Keyword(ParserConstants.AbstractKeyword, out abstractOrSealed)) {
-                        Keyword(ParserConstants.SealedKeyword, out abstractOrSealed);
-                    }
-                    TokenExpected(']');
+                Token abstractOrSealed;
+                if (!Keyword(ParserConstants.AbstractKeyword, out abstractOrSealed)) {
+                    Keyword(ParserConstants.SealedKeyword, out abstractOrSealed);
                 }
                 var baseClassQName = default(QualifiableNameNode);
                 if (Keyword(ParserConstants.ExtendsKeyword)) {
                     baseClassQName = QualifiableNameExpected();
                 }
+                List<KeyNode> keyList = null;
+                if (Keyword(ParserConstants.KeyKeyword)) {
+                    keyList = new List<KeyNode>();
+                    while (true) {
+                        var key = new KeyNode { IdentifierExpected() };
+                        while (true) {
+                            if (Token('.')) {
+                                key.Add(IdentifierExpected());
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        if (!Token(',')) {
+                            break;
+                        }
+                    }
+                }
                 TokenExpected('{');
-                var cls = new ClassTypeNode(ns, name, abstractOrSealed, baseClassQName);
-                while (ClassTypeProperty(ns, cls)) ;
+                var cls = new ClassTypeNode(ns, name, abstractOrSealed, baseClassQName, keyList);
+                while (Property(ns, cls)) ;
                 TokenExpected('}');
                 ns.GlobalTypeMap.Add(name, cls);
                 return true;
             }
             return false;
         }
-        private bool ClassTypeProperty(NamespaceNode ns, ClassTypeNode cls) {
+        private bool Property(NamespaceNode ns, ClassTypeNode cls) {
             Token name;
             if (Identifier(out name)) {
                 if (cls.PropertyMap.ContainsKey(name)) {
@@ -231,14 +248,14 @@ namespace SData.Compiler {
                 }
             }
             if ((flags & LocalTypeFlags.List) != 0) {
-                ListTypeNode r;
+                ListOrSetTypeNode r;
                 if (ListType(ns, out r)) {
                     result = r;
                     return true;
                 }
             }
             if ((flags & LocalTypeFlags.Set) != 0) {
-                SetTypeNode r;
+                ListOrSetTypeNode r;
                 if (SetType(ns, out r)) {
                     result = r;
                     return true;
@@ -282,13 +299,25 @@ namespace SData.Compiler {
             result = null;
             return false;
         }
-        private bool ListType(NamespaceNode ns, out ListTypeNode result) {
+        private bool ListType(NamespaceNode ns, out ListOrSetTypeNode result) {
             Token tk;
             if (Keyword(ParserConstants.ListKeyword, out tk)) {
                 TokenExpected('<');
                 var item = LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef | LocalTypeFlags.Nullable | LocalTypeFlags.List | LocalTypeFlags.Set | LocalTypeFlags.Map);
                 TokenExpected('>');
-                result = new ListTypeNode(ns, tk.TextSpan, item);
+                result = new ListOrSetTypeNode(ns, tk.TextSpan, true, item);
+                return true;
+            }
+            result = null;
+            return false;
+        }
+        private bool SetType(NamespaceNode ns, out ListOrSetTypeNode result) {
+            Token tk;
+            if (Keyword(ParserConstants.SetKeyword, out tk)) {
+                TokenExpected('<');
+                var item = (GlobalTypeRefNode)LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef);
+                TokenExpected('>');
+                result = new ListOrSetTypeNode(ns, tk.TextSpan, false, item);
                 return true;
             }
             result = null;
@@ -303,29 +332,6 @@ namespace SData.Compiler {
                 var value = LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef | LocalTypeFlags.Nullable | LocalTypeFlags.List | LocalTypeFlags.Set | LocalTypeFlags.Map);
                 TokenExpected('>');
                 result = new MapTypeNode(ns, tk.TextSpan, key, value);
-                return true;
-            }
-            result = null;
-            return false;
-        }
-        private bool SetType(NamespaceNode ns, out SetTypeNode result) {
-            Token tk;
-            if (Keyword(ParserConstants.SetKeyword, out tk)) {
-                TokenExpected('<');
-                var item = (GlobalTypeRefNode)LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef);
-                List<Token> keyNameList = null;
-                if (Token('\\')) {
-                    keyNameList = new List<Token> { IdentifierExpected() };
-                    while (true) {
-                        if (Token('.')) {
-                            keyNameList.Add(IdentifierExpected());
-                        }
-                        else {
-                            break;
-                        }
-                    }
-                }
-                result = new SetTypeNode(ns, tk.TextSpan, item, keyNameList, TokenExpected('>').TextSpan);
                 return true;
             }
             result = null;

@@ -310,12 +310,15 @@ namespace SData.Compiler {
     //        return new NameValuePair(Name.Value, value);
     //    }
     //}
+    internal sealed class KeyNode : List<Token> {
 
+    }
     internal sealed class ClassTypeNode : GlobalTypeNode {
-        public ClassTypeNode(NamespaceNode ns, Token name, Token abstractOrSealed, QualifiableNameNode baseClassQName)
+        public ClassTypeNode(NamespaceNode ns, Token name, Token abstractOrSealed, QualifiableNameNode baseClassQName, List<KeyNode> keyList)
             : base(ns, name) {
             AbstractOrSealed = abstractOrSealed;
             BaseClassQName = baseClassQName;
+            KeyList = keyList;
             PropertyMap = new Dictionary<Token, LocalTypeNode>();
         }
         public readonly Token AbstractOrSealed;
@@ -327,6 +330,7 @@ namespace SData.Compiler {
         }
         public readonly QualifiableNameNode BaseClassQName;//opt
         public ClassTypeNode BaseClass;
+        public readonly List<KeyNode> KeyList;//opt
         public readonly Dictionary<Token, LocalTypeNode> PropertyMap;
         public override void Resolve() {
             if (BaseClassQName.IsValid) {
@@ -344,16 +348,16 @@ namespace SData.Compiler {
                     CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.BaseClassIsSealed), BaseClassQName.TextSpan);
                 }
             }
-            var propInfoMap = new Dictionary<string, ClassTypePropertyInfo>();
+            var propInfoMap = new Dictionary<string, PropertyInfo>();
             foreach (var kv in PropertyMap) {
                 var nameToken = kv.Key;
                 if (baseClassInfo != null && baseClassInfo.TryGetPropertyInHierarchy(nameToken.Value) != null) {
                     CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicatePropertyName, nameToken.Value),
                         nameToken.TextSpan);
                 }
-                propInfoMap.Add(nameToken.Value, new ClassTypePropertyInfo(nameToken.Value, kv.Value.CreateInfo()));
+                propInfoMap.Add(nameToken.Value, new PropertyInfo(nameToken.Value, kv.Value.CreateInfo()));
             }
-            return new ClassTypeInfo(nsInfo, Name.Value, IsAbstract, IsSealed, baseClassInfo, propInfoMap);
+            return new ClassTypeInfo(nsInfo, Name.Value, IsAbstract, IsSealed, baseClassInfo, KeyList, propInfoMap);
         }
     }
     //internal sealed class PropertyNode : NamespaceDescendantNode {
@@ -424,20 +428,92 @@ namespace SData.Compiler {
             return new GlobalTypeRefInfo(GlobalType.CreateInfo());
         }
     }
-    //list<item>
-    internal sealed class ListTypeNode : NonNullableTypeNode {
-        public ListTypeNode(NamespaceNode ns, TextSpan textSpan, LocalTypeNode item)
+    //list<item>,set<item>
+    internal sealed class ListOrSetTypeNode : NonNullableTypeNode {
+        public ListOrSetTypeNode(NamespaceNode ns, TextSpan textSpan, bool isList, LocalTypeNode item)
             : base(ns, textSpan) {
+            IsList = isList;
             Item = item;
         }
+        public readonly bool IsList;
         public readonly LocalTypeNode Item;
         public override void Resolve() {
             Item.Resolve();
         }
         public override LocalTypeInfo CreateInfo() {
-            return new CollectionInfo(TypeKind.List, Item.CreateInfo(), null, null);
+            var itemInfo = Item.CreateInfo();
+            if (!IsList) {
+                var gtrInfo = (GlobalTypeRefInfo)itemInfo;
+
+            }
+            return new CollectionInfo(IsList ? TypeKind.List : TypeKind.Set, itemInfo, null);
         }
     }
+    //internal sealed class SetTypeNode : NonNullableTypeNode {
+    //    public SetTypeNode(NamespaceNode ns, TextSpan textSpan, GlobalTypeRefNode item)
+    //        : base(ns, textSpan) {
+    //        Item = item;
+    //        //KeyNameList = keyNameList;
+    //        //CloseTextSpan = closeTextSpan;
+    //    }
+    //    public readonly GlobalTypeRefNode Item;
+    //    //public readonly List<Token> KeyNameList;//opt
+    //    //public readonly TextSpan CloseTextSpan;
+    //    //public bool IsObjectSet {
+    //    //    get {
+    //    //        return KeyNameList != null;
+    //    //    }
+    //    //}
+    //    public override void Resolve() {
+    //        Item.Resolve();
+    //        //if (Item.IsSimpleGlobalType) {
+    //        //    if (KeyNameList != null) {
+    //        //        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.KeySelectorNotAllowedForSimpleSet), KeyNameList[0].TextSpan);
+    //        //    }
+    //        //}
+    //        //else if (KeyNameList == null) {
+    //        //    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.KeySelectorRequiredForObjectSet), CloseTextSpan);
+    //        //}
+    //    }
+    //    //public override LocalTypeInfo CreateInfo() {
+    //    //    var itemTypeInfo = Item.CreateInfo();
+    //    //    ObjectSetKeySelectorInfo selector = null;
+    //    //    var isObjectSet = IsObjectSet;
+    //    //    if (isObjectSet) {
+    //    //        selector = new ObjectSetKeySelectorInfo();
+    //    //        var globalTypeRefInfo = (GlobalTypeRefInfo)itemTypeInfo;
+    //    //        var keyCount = KeyNameList.Count;
+    //    //        for (var i = 0; i < keyCount; ++i) {
+    //    //            var keyName = KeyNameList[i];
+    //    //            var propInfo = globalTypeRefInfo.ClassType.TryGetPropertyInHierarchy(keyName.Value);
+    //    //            if (propInfo == null) {
+    //    //                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidPropertyReference, keyName.Value), keyName.TextSpan);
+    //    //            }
+    //    //            var propTypeInfo = propInfo.Type;
+    //    //            if (propTypeInfo.Kind == TypeKind.Nullable) {
+    //    //                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ObjectSetKeyCannotBeNullable), keyName.TextSpan);
+    //    //            }
+    //    //            if (propTypeInfo.Kind.IsSimple()) {
+    //    //                if (i < keyCount - 1) {
+    //    //                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidObjectSetKey), KeyNameList[i + 1].TextSpan);
+    //    //                }
+    //    //                selector.Add(propInfo);
+    //    //            }
+    //    //            else if (propTypeInfo.Kind == TypeKind.Class) {
+    //    //                if (i == keyCount - 1) {
+    //    //                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ObjectSetKeyMustBeSimpleType), keyName.TextSpan);
+    //    //                }
+    //    //                selector.Add(propInfo);
+    //    //                globalTypeRefInfo = (GlobalTypeRefInfo)propTypeInfo;
+    //    //            }
+    //    //            else {
+    //    //                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ObjectSetKeyMustBeSimpleType), keyName.TextSpan);
+    //    //            }
+    //    //        }
+    //    //    }
+    //    //    return new CollectionInfo(isObjectSet ? TypeKind.ObjectSet : TypeKind.Set, itemTypeInfo, null, selector);
+    //    //}
+    //}
     //map<key, value>
     internal sealed class MapTypeNode : NonNullableTypeNode {
         public MapTypeNode(NamespaceNode ns, TextSpan textSpan, GlobalTypeRefNode key, LocalTypeNode value)
@@ -449,82 +525,20 @@ namespace SData.Compiler {
         public readonly LocalTypeNode Value;
         public override void Resolve() {
             Key.Resolve();
-            if (!Key.IsSimpleGlobalType) {
-                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSimpleGlobalTypeReference, Key.GlobalTypeQName.ToString()),
-                    Key.GlobalTypeQName.TextSpan);
-            }
+            //if (!Key.IsSimpleGlobalType) {
+            //    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSimpleGlobalTypeReference, Key.GlobalTypeQName.ToString()),
+            //        Key.GlobalTypeQName.TextSpan);
+            //}
             Value.Resolve();
         }
         public override LocalTypeInfo CreateInfo() {
-            return new CollectionInfo(TypeKind.Map, Value.CreateInfo(), (GlobalTypeRefInfo)Key.CreateInfo(), null);
-        }
-    }
-    //set<Class1 \ Prop1.Prop2>
-    //set<Int32>
-    internal sealed class SetTypeNode : NonNullableTypeNode {
-        public SetTypeNode(NamespaceNode ns, TextSpan textSpan, GlobalTypeRefNode item,
-            List<Token> keyNameList, TextSpan closeTextSpan)
-            : base(ns, textSpan) {
-            Item = item;
-            KeyNameList = keyNameList;
-            CloseTextSpan = closeTextSpan;
-        }
-        public readonly GlobalTypeRefNode Item;
-        public readonly List<Token> KeyNameList;//opt
-        public readonly TextSpan CloseTextSpan;
-        public bool IsObjectSet {
-            get {
-                return KeyNameList != null;
+            var keyInfo = (GlobalTypeRefInfo)Key.CreateInfo();
+            var clsInfo = keyInfo.ClassType;
+            if (clsInfo != null && !clsInfo.HasKey) {
+                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSimpleGlobalTypeReference, Key.GlobalTypeQName.ToString()),
+                    Key.GlobalTypeQName.TextSpan);
             }
-        }
-        public override void Resolve() {
-            Item.Resolve();
-            if (Item.IsSimpleGlobalType) {
-                if (KeyNameList != null) {
-                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.KeySelectorNotAllowedForSimpleSet), KeyNameList[0].TextSpan);
-                }
-            }
-            else if (KeyNameList == null) {
-                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.KeySelectorRequiredForObjectSet), CloseTextSpan);
-            }
-        }
-        public override LocalTypeInfo CreateInfo() {
-            var itemTypeInfo = Item.CreateInfo();
-            ObjectSetKeySelectorInfo selector = null;
-            var isObjectSet = IsObjectSet;
-            if (isObjectSet) {
-                selector = new ObjectSetKeySelectorInfo();
-                var globalTypeRefInfo = (GlobalTypeRefInfo)itemTypeInfo;
-                var keyCount = KeyNameList.Count;
-                for (var i = 0; i < keyCount; ++i) {
-                    var keyName = KeyNameList[i];
-                    var propInfo = globalTypeRefInfo.ClassType.TryGetPropertyInHierarchy(keyName.Value);
-                    if (propInfo == null) {
-                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidPropertyReference, keyName.Value), keyName.TextSpan);
-                    }
-                    var propTypeInfo = propInfo.Type;
-                    if (propTypeInfo.Kind == TypeKind.Nullable) {
-                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ObjectSetKeyCannotBeNullable), keyName.TextSpan);
-                    }
-                    if (propTypeInfo.Kind.IsSimple()) {
-                        if (i < keyCount - 1) {
-                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidObjectSetKey), KeyNameList[i + 1].TextSpan);
-                        }
-                        selector.Add(propInfo);
-                    }
-                    else if (propTypeInfo.Kind == TypeKind.Class) {
-                        if (i == keyCount - 1) {
-                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ObjectSetKeyMustBeSimpleType), keyName.TextSpan);
-                        }
-                        selector.Add(propInfo);
-                        globalTypeRefInfo = (GlobalTypeRefInfo)propTypeInfo;
-                    }
-                    else {
-                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ObjectSetKeyMustBeSimpleType), keyName.TextSpan);
-                    }
-                }
-            }
-            return new CollectionInfo(isObjectSet ? TypeKind.ObjectSet : TypeKind.SimpleSet, itemTypeInfo, null, selector);
+            return new CollectionInfo(TypeKind.Map, Value.CreateInfo(), keyInfo);
         }
     }
 

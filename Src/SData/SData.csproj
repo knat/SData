@@ -52,7 +52,6 @@
     <Compile Include="IgnoreCaseString.cs" />
     <Compile Include="Internal\Lexer.cs" />
     <Compile Include="Metadata.cs" />
-    <Compile Include="ObjectSet.cs" />
     <Compile Include="Internal\SavingContext.cs" />
     <Compile Include="Serializer.cs" />
     <Compile Include="UntypedObject.cs" />

@@ -148,7 +148,7 @@ namespace SData.Internal {
                             }
                             propNameSet.Add(propName);
                             TokenExpected('=');
-                            ClassTypePropertyMd propMd;
+                            PropertyMd propMd;
                             if (propMdMap.TryGetValue(propName, out propMd)) {
                                 propMd.SetValue(obj, LocalValueExpected(propMd.Type));
                             }
@@ -316,7 +316,7 @@ namespace SData.Internal {
                     var nonNullableTypeMd = typeMd.NonNullableType;
                     var typeKind = nonNullableTypeMd.Kind;
                     var isList = typeKind == TypeKind.List;
-                    var isSet = typeKind == TypeKind.SimpleSet || typeKind == TypeKind.ObjectSet;
+                    var isSet = typeKind == TypeKind.Set;
                     if (!isList && !isSet) {
                         ErrorAndThrow(new DiagMsg(DiagnosticCode.SpecificValueExpected, typeKind.ToString()), token.TextSpan);
                     }

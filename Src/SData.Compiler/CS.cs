@@ -14,16 +14,21 @@ namespace SData.Compiler {
         internal static string UnescapeId(this string text) {
             return text[0] == '@' ? text.Substring(1) : text;
         }
+        //e.g: Id("@class")
         internal static SyntaxToken Id(string escapedId) {
             return SyntaxFactory.Identifier(default(SyntaxTriviaList), SyntaxKind.IdentifierToken,
                 escapedId, escapedId.UnescapeId(), default(SyntaxTriviaList));
         }
+        //e.g: Id("class")
         internal static SyntaxToken UnescapedId(string unescapedId) {
             return SyntaxFactory.Identifier(default(SyntaxTriviaList), SyntaxKind.IdentifierToken,
                unescapedId.EscapeId(), unescapedId, default(SyntaxTriviaList));
         }
         internal static IdentifierNameSyntax IdName(string escapedId) {
             return SyntaxFactory.IdentifierName(Id(escapedId));
+        }
+        internal static IdentifierNameSyntax UnescapedIdName(string unescapedId) {
+            return SyntaxFactory.IdentifierName(UnescapedId(unescapedId));
         }
         internal static IdentifierNameSyntax IdName(SyntaxToken identifier) {
             return SyntaxFactory.IdentifierName(identifier);
@@ -109,6 +114,12 @@ namespace SData.Compiler {
         }
         internal static SyntaxToken CommaToken {
             get { return SyntaxFactory.Token(SyntaxKind.CommaToken); }
+        }
+        internal static SyntaxToken EqualsEqualsToken {
+            get { return SyntaxFactory.Token(SyntaxKind.EqualsEqualsToken); }
+        }
+        internal static SyntaxToken ExclamationEqualsToken {
+            get { return SyntaxFactory.Token(SyntaxKind.ExclamationEqualsToken); }
         }
         internal static SyntaxTokenList PublicTokenList {
             get { return SyntaxFactory.TokenList(PublicToken); }
@@ -566,6 +577,10 @@ namespace SData.Compiler {
         //global::System.Nullable<T>
         internal static QualifiedNameSyntax NullableOf(TypeSyntax type) {
             return SyntaxFactory.QualifiedName(GlobalSystemName, GenericName("Nullable", type));
+        }
+        //global::System.IEquatable<T>
+        internal static QualifiedNameSyntax IEquatableOf(TypeSyntax type) {
+            return SyntaxFactory.QualifiedName(GlobalSystemName, GenericName("IEquatable", type));
         }
         //global::System.Action
         internal static QualifiedNameSyntax ActionName {
@@ -1071,6 +1086,9 @@ namespace SData.Compiler {
         internal static PrefixUnaryExpressionSyntax PreIncrementExpr(ExpressionSyntax operand) {
             return SyntaxFactory.PrefixUnaryExpression(SyntaxKind.PreIncrementExpression, operand);
         }
+        internal static PrefixUnaryExpressionSyntax LogicalNotExpr(ExpressionSyntax operand) {
+            return SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, operand);
+        }
         internal static PrefixUnaryExpressionSyntax PreDecrementExpr(ExpressionSyntax operand) {
             return SyntaxFactory.PrefixUnaryExpression(SyntaxKind.PreDecrementExpression, operand);
         }
@@ -1095,7 +1113,20 @@ namespace SData.Compiler {
         internal static TypeOfExpressionSyntax TypeOfExpr(TypeSyntax type) {
             return SyntaxFactory.TypeOfExpression(type);
         }
-        //
+        internal static ThisExpressionSyntax ThisExpr() {
+            return SyntaxFactory.ThisExpression();
+        }
+        internal static BaseExpressionSyntax BaseExpr() {
+            return SyntaxFactory.BaseExpression();
+        }
+        //>.x
+        internal static MemberBindingExpressionSyntax MemberBindingExpr(SimpleNameSyntax name) {
+            return SyntaxFactory.MemberBindingExpression(name);
+        }
+        internal static ConditionalAccessExpressionSyntax ConditionalAccessExpr(ExpressionSyntax left, ExpressionSyntax whenNotNull) {
+            return SyntaxFactory.ConditionalAccessExpression(left, whenNotNull);
+        }
+        //>a.b
         internal static MemberAccessExpressionSyntax MemberAccessExpr(ExpressionSyntax expression, SimpleNameSyntax name) {
             return SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, expression, name);
         }
@@ -1109,13 +1140,13 @@ namespace SData.Compiler {
             return ElementAccessExpr(expression, (IEnumerable<ExpressionSyntax>)argExprs);
         }
         internal static MemberAccessExpressionSyntax BaseMemberAccessExpr(SimpleNameSyntax name) {
-            return MemberAccessExpr(SyntaxFactory.BaseExpression(), name);
+            return MemberAccessExpr(BaseExpr(), name);
         }
         internal static MemberAccessExpressionSyntax BaseMemberAccessExpr(string name) {
-            return MemberAccessExpr(SyntaxFactory.BaseExpression(), name);
+            return MemberAccessExpr(BaseExpr(), name);
         }
         internal static ElementAccessExpressionSyntax BaseElementAccessExpr(params ExpressionSyntax[] arguments) {
-            return ElementAccessExpr(SyntaxFactory.BaseExpression(), arguments);
+            return ElementAccessExpr(BaseExpr(), arguments);
         }
         internal static InvocationExpressionSyntax InvoExpr(ExpressionSyntax expression) {
             return SyntaxFactory.InvocationExpression(expression, SyntaxFactory.ArgumentList());
@@ -1235,6 +1266,9 @@ namespace SData.Compiler {
         }
         internal static BracketedParameterListSyntax BracketedParameterList(params ParameterSyntax[] parameters) {
             return BracketedParameterList((IEnumerable<ParameterSyntax>)parameters);
+        }
+        internal static ArgumentSyntax Argument(ExpressionSyntax expr) {
+            return SyntaxFactory.Argument(expr);
         }
         internal static ArgumentSyntax OutArgument(string identifier) {
             return SyntaxFactory.Argument(null, OutToken, IdName(identifier));
@@ -1488,6 +1522,22 @@ namespace SData.Compiler {
         internal static ConversionOperatorDeclarationSyntax ConversionOperator(bool isImplict, TypeSyntax type,
             IEnumerable<ParameterSyntax> parameters, params StatementSyntax[] statements) {
             return ConversionOperator(isImplict, type, parameters, (IEnumerable<StatementSyntax>)statements);
+        }
+        //>public static bool operator ==(TYPE left, TYPE right) { ... }
+        internal static OperatorDeclarationSyntax OperatorDecl(TypeSyntax returnType, SyntaxToken operatorToken,
+            IEnumerable<ParameterSyntax> parameters, IEnumerable<StatementSyntax> statements) {
+            return SyntaxFactory.OperatorDeclaration(
+                attributeLists: default(SyntaxList<AttributeListSyntax>),
+                modifiers: PublicStaticTokenList,
+                returnType: returnType,
+                operatorToken: operatorToken,
+                parameterList: ParameterList(parameters),
+                body: SyntaxFactory.Block(statements),
+                expressionBody: null);
+        }
+        internal static OperatorDeclarationSyntax OperatorDecl(TypeSyntax returnType, SyntaxToken operatorToken,
+            IEnumerable<ParameterSyntax> parameters, params StatementSyntax[] statements) {
+            return OperatorDecl(returnType, operatorToken, parameters, (IEnumerable<StatementSyntax>)statements);
         }
         internal static FieldDeclarationSyntax Field(SyntaxTokenList modifiers, TypeSyntax type, SyntaxToken identifier, ExpressionSyntax initializer = null) {
             return SyntaxFactory.FieldDeclaration(

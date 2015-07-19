@@ -400,6 +400,9 @@ namespace SData.Compiler {
         internal static MemberAccessExpressionSyntax SerializerExpr {
             get { return CS.MemberAccessExpr(SDataName, "Serializer"); }
         }
+        internal static MemberAccessExpressionSyntax ExtensionsExpr {
+            get { return CS.MemberAccessExpr(SDataName, "Extensions"); }
+        }
         internal static MemberAccessExpressionSyntax AtomTypeMdExpr {
             get { return CS.MemberAccessExpr(SDataName, "AtomTypeMd"); }
         }

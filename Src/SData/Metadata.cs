@@ -50,9 +50,9 @@ namespace SData {
         //
         Nullable = 70,
         List = 71,
-        SimpleSet = 72,
-        ObjectSet = 73,
-        Map = 74,
+        Set = 72,
+        Map = 73,
+        //ObjectSet = 73,
 
     }
 
@@ -103,12 +103,11 @@ namespace SData {
     }
 
     public sealed class CollectionTypeMd : NonNullableTypeMd {
-        public CollectionTypeMd(TypeKind kind, LocalTypeMd itemOrValueType,
-            GlobalTypeRefMd mapKeyType, object objectSetKeySelector, Type clrType)
+        public CollectionTypeMd(TypeKind kind, LocalTypeMd itemOrValueType, GlobalTypeRefMd mapKeyType, Type clrType)
             : base(kind) {
             ItemOrValueType = itemOrValueType;
             MapKeyType = mapKeyType;
-            ObjectSetKeySelector = objectSetKeySelector;
+            //ObjectSetKeySelector = objectSetKeySelector;
             ClrType = clrType;
             var ti = clrType.GetTypeInfo();
             ClrConstructor = ReflectionExtensions.GetParameterlessConstructor(ti);
@@ -117,24 +116,24 @@ namespace SData {
                 ClrContainsKeyMethod = ReflectionExtensions.GetMethodInHierarchy(ti, "ContainsKey");
                 ClrGetEnumeratorMethod = ReflectionExtensions.GetMethodInHierarchy(ti, "GetEnumerator");
             }
-            else if (kind == TypeKind.ObjectSet) {
-                ClrKeySelectorProperty = ReflectionExtensions.GetPropertyInHierarchy(ti, "KeySelector");
-            }
+            //else if (kind == TypeKind.ObjectSet) {
+            //    ClrKeySelectorProperty = ReflectionExtensions.GetPropertyInHierarchy(ti, "KeySelector");
+            //}
         }
         public readonly LocalTypeMd ItemOrValueType;
         public readonly GlobalTypeRefMd MapKeyType;//opt
-        public readonly object ObjectSetKeySelector;//opt
+        //public readonly object ObjectSetKeySelector;//opt
         public readonly Type ClrType;
         public readonly ConstructorInfo ClrConstructor;
         public readonly MethodInfo ClrAddMethod;
         public readonly MethodInfo ClrContainsKeyMethod;//for map
         public readonly MethodInfo ClrGetEnumeratorMethod;//for map
-        public readonly PropertyInfo ClrKeySelectorProperty;//for object set
+        //public readonly PropertyInfo ClrKeySelectorProperty;//for object set
         public object CreateInstance() {
             var obj = ClrConstructor.Invoke(null);
-            if (Kind == TypeKind.ObjectSet) {
-                ClrKeySelectorProperty.SetValue(obj, ObjectSetKeySelector);
-            }
+            //if (Kind == TypeKind.ObjectSet) {
+            //    ClrKeySelectorProperty.SetValue(obj, ObjectSetKeySelector);
+            //}
             return obj;
         }
         public void InvokeAdd(object obj, object item) {
@@ -273,10 +272,39 @@ namespace SData {
             return null;
         }
     }
-
+    public sealed class KeyMd {
+        public KeyMd(string[] propertyNames) {
+            _propertyNames = propertyNames;
+        }
+        internal void Resolve(ClassTypeMd clsType) {
+            var propNames = _propertyNames;
+            var count = propNames.Length;
+            var props = new PropertyMd[count];
+            for (var i = 0; i < count; ++i) {
+                var prop = props[i] = clsType._propertyMap[propNames[i]];
+                var propType = prop.Type;
+                if (propType.Kind == TypeKind.Class) {
+                    clsType = propType.NonNullableType.TryGetGlobalType<ClassTypeMd>();
+                }
+            }
+            _properties = props;
+        }
+        private readonly string[] _propertyNames;
+        public IReadOnlyList<string> PropertyNameList {
+            get {
+                return _propertyNames;
+            }
+        }
+        private PropertyMd[] _properties;
+        public IReadOnlyList<PropertyMd> PropertyList {
+            get {
+                return _properties;
+            }
+        }
+    }
     public sealed class ClassTypeMd : GlobalTypeMd {
         public ClassTypeMd(FullName fullName, bool isAbstract, ClassTypeMd baseClass,
-            Dictionary<string, ClassTypePropertyMd> thisPropertyMap, Type clrType)
+            KeyMd[] keys, Dictionary<string, PropertyMd> thisPropertyMap, Type clrType)
             : base(TypeKind.Class, fullName) {
             IsAbstract = isAbstract;
             BaseClass = baseClass;
@@ -284,7 +312,7 @@ namespace SData {
             TypeInfo ti = clrType.GetTypeInfo();
             if (thisPropertyMap != null) {
                 foreach (var prop in thisPropertyMap.Values) {
-                    prop.GetClrPropertyOrField(ti);
+                    prop.Resolve(ti, this);
                 }
             }
             if (!isAbstract) {
@@ -299,7 +327,7 @@ namespace SData {
                 _propertyMap = baseClass._propertyMap;
             }
             else {
-                var pm = new Dictionary<string, ClassTypePropertyMd>(baseClass._propertyMap.Count + thisPropertyMap.Count);
+                var pm = new Dictionary<string, PropertyMd>(baseClass._propertyMap.Count + thisPropertyMap.Count);
                 foreach (var kv in baseClass._propertyMap) {
                     pm.Add(kv.Key, kv.Value);
                 }
@@ -308,17 +336,35 @@ namespace SData {
                 }
                 _propertyMap = pm;
             }
+            if (keys != null) {
+                foreach (var key in keys) {
+                    key.Resolve(this);
+                }
+                _thisKeys = keys;
+            }
             ClrOnLoadingMethod = ti.GetDeclaredMethod(ReflectionExtensions.OnLoadingNameStr);
             ClrOnLoadedMethod = ti.GetDeclaredMethod(ReflectionExtensions.OnLoadedNameStr);
         }
         public readonly bool IsAbstract;
         public readonly ClassTypeMd BaseClass;
-        private static readonly Dictionary<string, ClassTypePropertyMd> _emptyPropertyMap = new Dictionary<string, ClassTypePropertyMd>(0);
-        internal readonly Dictionary<string, ClassTypePropertyMd> _propertyMap;//includes base properties
-        public IReadOnlyDictionary<string, ClassTypePropertyMd> PropertyMap {
+        private static readonly Dictionary<string, PropertyMd> _emptyPropertyMap = new Dictionary<string, PropertyMd>(0);
+        internal readonly Dictionary<string, PropertyMd> _propertyMap;//includes base properties
+        public IReadOnlyDictionary<string, PropertyMd> PropertyMap {
+            get { return _propertyMap; }
+        }
+        private readonly KeyMd[] _thisKeys;
+        public IReadOnlyList<KeyMd> KeyList {//opt
             get {
-                return _propertyMap;
+                for (var md = this; md != null; md = md.BaseClass) {
+                    if (md._thisKeys != null) {
+                        return md._thisKeys;
+                    }
+                }
+                return null;
             }
+        }
+        public bool Haskey {
+            get { return KeyList != null; }
         }
         public readonly Type ClrType;
         public readonly ConstructorInfo ClrConstructor;//for non abstract class
@@ -369,8 +415,8 @@ namespace SData {
         }
     }
 
-    public sealed class ClassTypePropertyMd {
-        public ClassTypePropertyMd(string name, LocalTypeMd type, string clrName, bool isClrProperty) {
+    public sealed class PropertyMd {
+        public PropertyMd(string name, LocalTypeMd type, string clrName, bool isClrProperty) {
             Name = name;
             Type = type;
             ClrName = clrName;
@@ -382,13 +428,15 @@ namespace SData {
         public readonly bool IsClrProperty;
         public PropertyInfo ClrProperty { get; private set; }
         public FieldInfo ClrField { get; private set; }
-        internal void GetClrPropertyOrField(TypeInfo ti) {
+        public ClassTypeMd ClassType { get; private set; }
+        internal void Resolve(TypeInfo ti, ClassTypeMd classType) {
             if (IsClrProperty) {
                 ClrProperty = ReflectionExtensions.GetProperty(ti, ClrName);
             }
             else {
                 ClrField = ReflectionExtensions.GetField(ti, ClrName);
             }
+            ClassType = classType;
         }
         public object GetValue(object obj) {
             if (IsClrProperty) {

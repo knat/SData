@@ -5,16 +5,9 @@ namespace SData {
     public static class Extensions {
         public const string SystemUri = "https://github.com/knat/SData";
         //
-        //
-        //
         public static string InvFormat(this string format, params string[] args) {
             return StringBuilderBuffer.Acquire().AppendFormat(CultureInfo.InvariantCulture, format, args).ToStringAndRelease();
         }
-
-        //public static string ToInvString(this int value) {
-        //    return value.ToString(CultureInfo.InvariantCulture);
-        //}
-
         //
         public static int AggregateHash(int hash, int newValue) {
             unchecked {
