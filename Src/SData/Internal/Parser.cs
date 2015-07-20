@@ -61,7 +61,7 @@ namespace SData.Internal {
                 List<AliasUri> list = null;
                 while (true) {
                     Token aliasToken;
-                    if (Identifier(out aliasToken)) {
+                    if (Name(out aliasToken)) {
                         var alias = aliasToken.Value;
                         //if (alias == "sys") {
                         //}
@@ -100,14 +100,14 @@ namespace SData.Internal {
             //var clsNameTS = default(TextSpan);
             if (Token('(')) {
                 hasTypeIndicator = true;
-                var aliasToken = IdentifierExpected();
+                var aliasToken = NameExpected();
                 TokenExpected((int)TokenKind.ColonColon, ":: expected.");
-                var nameToken = IdentifierExpected();
+                var nameToken = NameExpected();
                 TokenExpected(')');
                 fullName = new FullName(GetUri(aliasToken), nameToken.Value);
                 textSpan = nameToken.TextSpan;
                 if (declaredClsMd != null) {
-                    clsMd = AssemblyMd.TryGetGlobalType<ClassTypeMd>(fullName);
+                    clsMd = ProgramMd.TryGetGlobalType<ClassTypeMd>(fullName);
                     if (clsMd == null) {
                         ErrorAndThrow(new DiagMsg(DiagnosticCode.InvalidClassReference, fullName.ToString()), textSpan);
                     }
@@ -138,7 +138,7 @@ namespace SData.Internal {
                     Dictionary<string, object> unknownPropMap = null;
                     while (true) {
                         Token propNameToken;
-                        if (Identifier(out propNameToken)) {
+                        if (Name(out propNameToken)) {
                             var propName = propNameToken.Value;
                             if (propNameSet == null) {
                                 propNameSet = new HashSet<string>();
@@ -191,7 +191,7 @@ namespace SData.Internal {
                     Dictionary<string, object> propMap = null;
                     while (true) {
                         Token propNameToken;
-                        if (Identifier(out propNameToken)) {
+                        if (Name(out propNameToken)) {
                             var propName = propNameToken.Value;
                             if (propMap == null) {
                                 propMap = new Dictionary<string, object>();
@@ -277,9 +277,9 @@ namespace SData.Internal {
                     return ClassValue(null, out result, out textSpan);
                 }
             }
-            if (Identifier(out token)) {//enum value
+            if (Name(out token)) {//enum value
                 TokenExpected((int)TokenKind.ColonColon, ":: expected.");
-                var nameToken = IdentifierExpected();
+                var nameToken = NameExpected();
                 var fullName = new FullName(GetUri(token), nameToken.Value);
                 EnumTypeMd enumMd = null;
                 if (typeMd != null) {
@@ -288,7 +288,7 @@ namespace SData.Internal {
                     if (typeKind != TypeKind.Enum) {
                         ErrorAndThrow(new DiagMsg(DiagnosticCode.SpecificValueExpected, typeKind.ToString()), nameToken.TextSpan);
                     }
-                    enumMd = AssemblyMd.TryGetGlobalType<EnumTypeMd>(fullName);
+                    enumMd = ProgramMd.TryGetGlobalType<EnumTypeMd>(fullName);
                     if (enumMd == null) {
                         ErrorAndThrow(new DiagMsg(DiagnosticCode.InvalidEnumReference, fullName.ToString()), nameToken.TextSpan);
                     }
@@ -299,7 +299,7 @@ namespace SData.Internal {
                     }
                 }
                 TokenExpected('.');
-                var memberNameToken = IdentifierExpected();
+                var memberNameToken = NameExpected();
                 if (enumMd != null) {
                     if (!enumMd._members.TryGetValue(memberNameToken.Value, out result)) {
                         ErrorAndThrow(new DiagMsg(DiagnosticCode.InvalidEnumMemberName, memberNameToken.Value), memberNameToken.TextSpan);

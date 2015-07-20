@@ -310,7 +310,7 @@ namespace SData.Internal {
                             AdvanceChar();
                         }
                         else {
-                            return CreateToken(state == State.InNormalIdentifier ? TokenKind.NormalIdentifier : TokenKind.VerbatimIdentifier, sb.ToString());
+                            return CreateToken(state == State.InNormalIdentifier ? TokenKind.NormalName : TokenKind.VerbatimName, sb.ToString());
                         }
                         break;
                     case State.InNormalString:

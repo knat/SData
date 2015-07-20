@@ -98,22 +98,22 @@ namespace SData.Internal {
             return result;
         }
         protected void EndOfFileExpected() {
-            TokenExpected(char.MaxValue, "End of file expected.");
+            TokenExpected(char.MaxValue, "End-of-file expected.");
         }
 
-        protected bool Identifier(out Token result) {
+        protected bool Name(out Token result) {
             result = GetToken();
-            if (result.IsIdentifier) {
+            if (result.IsName) {
                 ConsumeToken();
                 return true;
             }
             result = default(Token);
             return false;
         }
-        protected Token IdentifierExpected() {
+        protected Token NameExpected() {
             Token result;
-            if (!Identifier(out result)) {
-                ErrorAndThrow("Identifier expected.");
+            if (!Name(out result)) {
+                ErrorAndThrow("Name expected.");
             }
             return result;
         }

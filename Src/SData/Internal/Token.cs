@@ -2,8 +2,8 @@
 
 namespace SData.Internal {
     public enum TokenKind {
-        NormalIdentifier = -1000,// id
-        VerbatimIdentifier,// @id
+        NormalName = -1000,// id
+        VerbatimName,// @id
         NormalString,// "..."
         VerbatimString,// @"..."
         Char,// 'c'
@@ -38,23 +38,23 @@ namespace SData.Internal {
                 return Kind == char.MaxValue;
             }
         }
-        public bool IsNormalIdentifier {
+        public bool IsNormalName {
             get {
-                return TokenKind == TokenKind.NormalIdentifier;
+                return TokenKind == TokenKind.NormalName;
             }
         }
-        public bool IsVerbatimIdentifier {
+        public bool IsVerbatimName {
             get {
-                return TokenKind == TokenKind.VerbatimIdentifier;
+                return TokenKind == TokenKind.VerbatimName;
             }
         }
-        public bool IsIdentifier {
+        public bool IsName {
             get {
-                return IsNormalIdentifier || IsVerbatimIdentifier;
+                return IsNormalName || IsVerbatimName;
             }
         }
         public bool IsKeyword(string value) {
-            return IsNormalIdentifier && Value == value;
+            return IsNormalName && Value == value;
         }
         public bool IsNull {
             get {

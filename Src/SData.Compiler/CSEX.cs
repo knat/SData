@@ -11,75 +11,74 @@ namespace SData.Compiler {
     internal static class CSEX {
         internal static readonly string[] IgnoreCaseStringNameParts = new string[] { "IgnoreCaseString", "SData" };
         internal static readonly string[] BinaryNameParts = new string[] { "Binary", "SData" };
-        internal static readonly string[] IObjectSet2NameParts = new string[] { "IObjectSet`2", "SData" };
+        //internal static readonly string[] IObjectSet2NameParts = new string[] { "IObjectSet`2", "SData" };
         internal static readonly string[] SchemaNamespaceAttributeNameParts = new string[] { "SchemaNamespaceAttribute", "SData" };
         internal static readonly string[] __CompilerSchemaNamespaceAttributeNameParts = new string[] { "__CompilerSchemaNamespaceAttribute", "SData" };
         internal static readonly string[] SchemaClassAttributeNameParts = new string[] { "SchemaClassAttribute", "SData" };
         internal static readonly string[] SchemaPropertyAttributeNameParts = new string[] { "SchemaPropertyAttribute", "SData" };
+
         internal static int MapNamespaces(NamespaceInfoMap nsInfoMap, IAssemblySymbol assSymbol, bool isRef) {
             var count = 0;
             foreach (AttributeData attData in assSymbol.GetAttributes()) {
                 if (attData.AttributeClass.FullNameEquals(isRef ? __CompilerSchemaNamespaceAttributeNameParts : SchemaNamespaceAttributeNameParts)) {
                     var ctorArgs = attData.ConstructorArguments;
-                    string uri = null, dottedNameStr = null;
+                    string uri = null, dottedString = null;
                     var ctorArgsLength = ctorArgs.Length;
                     if (ctorArgsLength >= 2) {
                         uri = ctorArgs[0].Value as string;
                         if (uri != null) {
-                            dottedNameStr = ctorArgs[1].Value as string;
+                            dottedString = ctorArgs[1].Value as string;
                         }
                     }
-                    var refOk = false;
-                    if (dottedNameStr != null) {
-                        NamespaceInfo nsInfo;
-                        if (nsInfoMap.TryGetValue(uri, out nsInfo)) {
-                            DottedName dottedName;
-                            if (DottedName.TryParse(dottedNameStr, out dottedName)) {
-                                if (nsInfo.DottedName == null) {
-                                    nsInfo.DottedName = dottedName;
-                                    nsInfo.IsRef = isRef;
-                                    ++count;
-                                    if (isRef) {
-                                        string mdData = null;
-                                        if (ctorArgsLength >= 3) {
-                                            mdData = ctorArgs[2].Value as string;
-                                        }
-                                        if (mdData != null) {
-                                            var ldCtx = new LoadingContext();
-                                            RefMdNamespace mdns = null; ;
-                                            //if (MdNamespace.TryLoad("__CompilerSchemaNamespaceAttributeData", new SimpleStringReader(mdData), ldCtx, out mdNs)) {
-                                            if (nsInfo.TrySetRefMd(mdns)) {
-                                                refOk = true;
-                                            }
-                                            //}
-                                        }
-                                    }
-                                }
-                                else if (!isRef) {
-                                    CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateSchemaNamespaceAttributeUri, uri),
-                                        GetTextSpan(attData));
-                                }
-                            }
-                            else if (!isRef) {
-                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaNamespaceAttributeNamespaceName, dottedNameStr),
-                                    GetTextSpan(attData));
-                            }
+                    if (dottedString == null) {
+                        if (isRef) {
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute,
+                                assSymbol.Identity.Name, uri, dottedString), default(TextSpan));
                         }
                         else {
-                            if (!isRef) {
-                                CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaNamespaceAttributeUri, uri),
-                                    GetTextSpan(attData));
-                            }
-                            refOk = true;
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaNamespaceAttribute),
+                                GetTextSpan(attData));
                         }
                     }
-                    else if (!isRef) {
-                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaNamespaceAttribute),
-                            GetTextSpan(attData));
+                    NamespaceInfo nsInfo;
+                    if (!nsInfoMap.TryGetValue(uri, out nsInfo)) {
+                        if (isRef) {
+                            continue;
+                        }
+                        else {
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaNamespaceAttributeUri, uri),
+                                GetTextSpan(attData));
+                        }
                     }
-                    if (isRef && !refOk) {
-                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute,
-                            uri, dottedNameStr, assSymbol.Identity.Name), default(TextSpan));
+                    if (nsInfo.DottedName != null) {
+                        if (isRef) {
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute,
+                                assSymbol.Identity.Name, uri, dottedString), default(TextSpan));
+                        }
+                        else {
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateSchemaNamespaceAttributeUri, uri),
+                                GetTextSpan(attData));
+                        }
+                    }
+                    CSDottedName dottedName;
+                    if (!CSDottedName.TryParse(dottedString, out dottedName)) {
+                        if (isRef) {
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute,
+                                assSymbol.Identity.Name, uri, dottedString), default(TextSpan));
+                        }
+                        else {
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaNamespaceAttributeNamespaceName, dottedString),
+                                GetTextSpan(attData));
+                        }
+                    }
+                    nsInfo.DottedName = dottedName;
+                    nsInfo.IsRef = isRef;
+                    ++count;
+                    if (isRef) {
+                        if (ctorArgsLength >= 4) {
+                            nsInfo.SetRefData(ctorArgs[2].Values.Select(i => i.Value as string),
+                               ctorArgs[3].Values.Select(i => i.Value as string));
+                        }
                     }
                 }
             }
@@ -305,8 +304,10 @@ namespace SData.Compiler {
         //    return CS.NewObjExpr(NameValuePairName, CS.Literal(value.Name), AtomValueLiteral(kind, value.Value));
         //}
 
-        internal static string ToIdString(string s) {
-            if (s == null || s.Length == 0) return s;
+        internal static string ToValidId(string s) {
+            if (string.IsNullOrEmpty(s)) {
+                return s;
+            }
             var sb = StringBuilderBuffer.Acquire();
             foreach (var ch in s) {
                 if (SyntaxFacts.IsIdentifierPartCharacter(ch)) {
@@ -318,17 +319,17 @@ namespace SData.Compiler {
             }
             return sb.ToStringAndRelease();
         }
+        internal static string SDataProgramName(string assName) {
+            return "SData_" + ToValidId(assName);
+        }
         internal static AliasQualifiedNameSyntax SDataName {
             get { return CS.GlobalAliasQualifiedName("SData"); }
-        }
-        internal static string SDataAssemblyMdName(string assName) {
-            return "SDataAssemblyMd_" + ToIdString(assName);
         }
         internal static QualifiedNameSyntax __CompilerSchemaNamespaceAttributeName {
             get { return CS.QualifiedName(SDataName, "__CompilerSchemaNamespaceAttribute"); }
         }
-        internal static QualifiedNameSyntax AssemblyMdName {
-            get { return CS.QualifiedName(SDataName, "AssemblyMd"); }
+        internal static QualifiedNameSyntax ProgramMdName {
+            get { return CS.QualifiedName(SDataName, "ProgramMd"); }
         }
         internal static QualifiedNameSyntax GlobalTypeMdName {
             get { return CS.QualifiedName(SDataName, "GlobalTypeMd"); }

@@ -50,10 +50,9 @@
     <Compile Include="Compiler.cs" />
     <Compile Include="CS.cs" />
     <Compile Include="Diagnostics.cs" />
-    <Compile Include="DottedName.cs" />
+    <Compile Include="CSDottedName.cs" />
     <Compile Include="CSEX.cs" />
     <Compile Include="Infos.cs" />
-    <Compile Include="RefMd.cs" />
     <Compile Include="Nodes.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="CompilerContext.cs" />

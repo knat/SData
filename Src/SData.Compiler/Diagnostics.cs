@@ -131,7 +131,7 @@ namespace SData.Compiler {
                 case DiagCodeEx.SchemaNamespaceAttributeRequired:
                     return "SchemaNamespaceAttribute required for uri '{0}'.".InvFormat(_msgArgs);
                 case DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute:
-                    return "Invalid __CompilerSchemaNamespaceAttribute. uri: '{0}', namespaceName: '{1}', assembly: '{2}'. Make sure one schema namespace is implemented in only one assembly, or you should rebuild that assembly.".InvFormat(_msgArgs);
+                    return "Invalid __CompilerSchemaNamespaceAttribute. assembly: '{0}', uri argument: '{1}', namespaceName argument: '{2}'. Make sure one schema namespace is implemented in only one assembly, or you should rebuild that assembly.".InvFormat(_msgArgs);
                 //
                 case DiagCodeEx.InvalidSchemaClassAttribute:
                     return "Invalid SchemaClassAttribute.";

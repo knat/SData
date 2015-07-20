@@ -96,7 +96,7 @@ namespace SData.Compiler {
                 var uri = UriExpected();
                 var alias = default(Token);
                 if (Keyword(ParserConstants.AsKeyword)) {
-                    alias = IdentifierExpected();
+                    alias = NameExpected();
                     if (alias.Value == "sys") {
                         ErrorAndThrow(new DiagMsgEx(DiagCodeEx.AliasSysReserved), alias.TextSpan);
                     }
@@ -115,9 +115,9 @@ namespace SData.Compiler {
         }
         private bool QualifiableName(out QualifiableNameNode result) {
             Token name;
-            if (Identifier(out name)) {
+            if (Name(out name)) {
                 if (Token((int)TokenKind.ColonColon)) {
-                    result = new QualifiableNameNode(name, IdentifierExpected());
+                    result = new QualifiableNameNode(name, NameExpected());
                 }
                 else {
                     result = new QualifiableNameNode(default(Token), name);
@@ -147,7 +147,7 @@ namespace SData.Compiler {
         }
         private bool EnumType(NamespaceNode ns) {
             if (Keyword(ParserConstants.EnumKeyword)) {
-                var name = IdentifierExpected();
+                var name = NameExpected();
                 CheckDuplicateGlobalType(ns, name);
                 KeywordExpected(ParserConstants.AsKeyword);
                 var atomQName = QualifiableNameExpected();
@@ -162,7 +162,7 @@ namespace SData.Compiler {
         }
         private bool EnumTypeMember(EnumTypeNode en) {
             Token name;
-            if (Identifier(out name)) {
+            if (Name(out name)) {
                 if (en.MemberMap.ContainsKey(name)) {
                     ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateEnumMemberName, name.Value), name.TextSpan);
                 }
@@ -174,7 +174,7 @@ namespace SData.Compiler {
         }
         private bool ClassType(NamespaceNode ns) {
             if (Keyword(ParserConstants.ClassKeyword)) {
-                var name = IdentifierExpected();
+                var name = NameExpected();
                 CheckDuplicateGlobalType(ns, name);
                 Token abstractOrSealed;
                 if (!Keyword(ParserConstants.AbstractKeyword, out abstractOrSealed)) {
@@ -188,10 +188,10 @@ namespace SData.Compiler {
                 if (Keyword(ParserConstants.KeyKeyword)) {
                     keyList = new List<KeyNode>();
                     while (true) {
-                        var key = new KeyNode { IdentifierExpected() };
+                        var key = new KeyNode { NameExpected() };
                         while (true) {
                             if (Token('.')) {
-                                key.Add(IdentifierExpected());
+                                key.Add(NameExpected());
                             }
                             else {
                                 break;
@@ -213,7 +213,7 @@ namespace SData.Compiler {
         }
         private bool Property(NamespaceNode ns, ClassTypeNode cls) {
             Token name;
-            if (Identifier(out name)) {
+            if (Name(out name)) {
                 if (cls.PropertyMap.ContainsKey(name)) {
                     ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicatePropertyName, name.Value), name.TextSpan);
                 }

@@ -5,8 +5,8 @@ using System.Reflection;
 using SData.Internal;
 
 namespace SData {
-    public abstract class AssemblyMd {
-        protected AssemblyMd(GlobalTypeMd[] globalTypes) {
+    public abstract class ProgramMd {
+        protected ProgramMd(GlobalTypeMd[] globalTypes) {
             if (globalTypes != null) {
                 lock (_globalTypeMap) {
                     foreach (var globalType in globalTypes) {

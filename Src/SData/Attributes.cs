@@ -18,7 +18,7 @@ namespace SData {
 
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
     public sealed class __CompilerSchemaNamespaceAttribute : Attribute {
-        public __CompilerSchemaNamespaceAttribute(string uri, string namespaceName, string data) { }
+        public __CompilerSchemaNamespaceAttribute(string uri, string namespaceName, string[] typeNames, string[] propertyNames) { }
     }
 
 }
