@@ -114,13 +114,13 @@ namespace SData.Compiler {
             return false;
         }
         private bool QualifiableName(out QualifiableNameNode result) {
-            Token name;
-            if (Name(out name)) {
+            Token tk;
+            if (Name(out tk)) {
                 if (Token((int)TokenKind.ColonColon)) {
-                    result = new QualifiableNameNode(name, NameExpected());
+                    result = new QualifiableNameNode(tk, NameExpected());
                 }
                 else {
-                    result = new QualifiableNameNode(default(Token), name);
+                    result = new QualifiableNameNode(default(Token), tk);
                 }
                 return true;
             }

@@ -9,13 +9,12 @@ using SData.Internal;
 
 namespace SData.Compiler {
     internal static class CSEX {
-        internal static readonly string[] IgnoreCaseStringNameParts = new string[] { "IgnoreCaseString", "SData" };
-        internal static readonly string[] BinaryNameParts = new string[] { "Binary", "SData" };
-        //internal static readonly string[] IObjectSet2NameParts = new string[] { "IObjectSet`2", "SData" };
         internal static readonly string[] SchemaNamespaceAttributeNameParts = new string[] { "SchemaNamespaceAttribute", "SData" };
         internal static readonly string[] __CompilerSchemaNamespaceAttributeNameParts = new string[] { "__CompilerSchemaNamespaceAttribute", "SData" };
         internal static readonly string[] SchemaClassAttributeNameParts = new string[] { "SchemaClassAttribute", "SData" };
         internal static readonly string[] SchemaPropertyAttributeNameParts = new string[] { "SchemaPropertyAttribute", "SData" };
+        internal static readonly string[] IgnoreCaseStringNameParts = new string[] { "IgnoreCaseString", "SData" };
+        internal static readonly string[] BinaryNameParts = new string[] { "Binary", "SData" };
 
         internal static int MapNamespaces(NamespaceInfoMap nsInfoMap, IAssemblySymbol assSymbol, bool isRef) {
             var count = 0;
@@ -33,7 +32,7 @@ namespace SData.Compiler {
                     if (dottedString == null) {
                         if (isRef) {
                             CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute,
-                                assSymbol.Identity.Name, uri, dottedString), default(TextSpan));
+                                assSymbol.Identity.Name), default(TextSpan));
                         }
                         else {
                             CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaNamespaceAttribute),
@@ -52,8 +51,8 @@ namespace SData.Compiler {
                     }
                     if (nsInfo.DottedName != null) {
                         if (isRef) {
-                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute,
-                                assSymbol.Identity.Name, uri, dottedString), default(TextSpan));
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Duplicate__CompilerSchemaNamespaceAttributeUri,
+                                uri, assSymbol.Identity.Name), default(TextSpan));
                         }
                         else {
                             CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateSchemaNamespaceAttributeUri, uri),
@@ -63,8 +62,8 @@ namespace SData.Compiler {
                     CSDottedName dottedName;
                     if (!CSDottedName.TryParse(dottedString, out dottedName)) {
                         if (isRef) {
-                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute,
-                                assSymbol.Identity.Name, uri, dottedString), default(TextSpan));
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerSchemaNamespaceAttributeNamespaceName,
+                                dottedString, assSymbol.Identity.Name), default(TextSpan));
                         }
                         else {
                             CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidSchemaNamespaceAttributeNamespaceName, dottedString),
@@ -78,6 +77,10 @@ namespace SData.Compiler {
                         if (ctorArgsLength >= 4) {
                             nsInfo.SetRefData(ctorArgs[2].Values.Select(i => i.Value as string),
                                ctorArgs[3].Values.Select(i => i.Value as string));
+                        }
+                        else {
+                            CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute,
+                                assSymbol.Identity.Name), default(TextSpan));
                         }
                     }
                 }
@@ -247,15 +250,6 @@ namespace SData.Compiler {
                     throw new ArgumentException("Invalid type kind: " + typeKind.ToString());
             }
         }
-        //internal static bool IsAtomType(TypeKind typeKind, bool isNullable, ITypeSymbol typeSymbol) {
-        //    if (!isNullable || typeKind.IsClrRefAtom()) {
-        //        return IsAtomType(typeKind, typeSymbol);
-        //    }
-        //    if (typeSymbol.SpecialType == SpecialType.System_Nullable_T) {
-        //        return IsAtomType(typeKind, ((INamedTypeSymbol)typeSymbol).TypeArguments[0]);
-        //    }
-        //    return false;
-        //}
         internal static ExpressionSyntax AtomValueLiteral(TypeKind typeKind, object value) {
             switch (typeKind) {
                 case TypeKind.String:
@@ -300,9 +294,6 @@ namespace SData.Compiler {
                     throw new ArgumentException("Invalid type kind: " + typeKind.ToString());
             }
         }
-        //internal static ExpressionSyntax NameValuePairLiteral(NameValuePair value, TypeKind kind) {
-        //    return CS.NewObjExpr(NameValuePairName, CS.Literal(value.Name), AtomValueLiteral(kind, value.Value));
-        //}
 
         internal static string ToValidId(string s) {
             if (string.IsNullOrEmpty(s)) {
@@ -340,20 +331,14 @@ namespace SData.Compiler {
         internal static QualifiedNameSyntax EnumTypeMdName {
             get { return CS.QualifiedName(SDataName, "EnumTypeMd"); }
         }
-        //internal static QualifiedNameSyntax NameValuePairName {
-        //    get { return CS.QualifiedName(SDataName, "NameValuePair"); }
-        //}
-        //internal static ArrayTypeSyntax NameValuePairArrayType {
-        //    get { return CS.OneDimArrayType(NameValuePairName); }
-        //}
         internal static QualifiedNameSyntax ClassTypeMdName {
             get { return CS.QualifiedName(SDataName, "ClassTypeMd"); }
         }
-        internal static QualifiedNameSyntax ClassTypePropertyMdName {
-            get { return CS.QualifiedName(SDataName, "ClassTypePropertyMd"); }
+        internal static QualifiedNameSyntax PropertyMdName {
+            get { return CS.QualifiedName(SDataName, "PropertyMd"); }
         }
-        internal static ArrayTypeSyntax ClassTypePropertyMdArrayType {
-            get { return CS.OneDimArrayType(ClassTypePropertyMdName); }
+        internal static ArrayTypeSyntax PropertyMdArrayType {
+            get { return CS.OneDimArrayType(PropertyMdName); }
         }
         internal static QualifiedNameSyntax NullableTypeMdName {
             get { return CS.QualifiedName(SDataName, "NullableTypeMd"); }
@@ -361,11 +346,8 @@ namespace SData.Compiler {
         internal static QualifiedNameSyntax GlobalTypeRefMdName {
             get { return CS.QualifiedName(SDataName, "GlobalTypeRefMd"); }
         }
-        internal static MemberAccessExpressionSyntax GlobalTypeRefMdExpr {
-            get { return CS.MemberAccessExpr(SDataName, "GlobalTypeRefMd"); }
-        }
-        internal static QualifiedNameSyntax CollectionMdName {
-            get { return CS.QualifiedName(SDataName, "CollectionMd"); }
+        internal static QualifiedNameSyntax CollectionTypeMdName {
+            get { return CS.QualifiedName(SDataName, "CollectionTypeMd"); }
         }
         internal static ExpressionSyntax Literal(TypeKind value) {
             return CS.MemberAccessExpr(CS.MemberAccessExpr(SDataName, "TypeKind"), value.ToString());
@@ -388,15 +370,9 @@ namespace SData.Compiler {
         internal static ExpressionSyntax Literal(Binary value) {
             return CS.NewObjExpr(BinaryName, CS.Literal(value.ToBytes()), CS.Literal(value.IsReadOnly));
         }
-        internal static QualifiedNameSyntax ObjectSetOf(TypeSyntax keyType, TypeSyntax objectType) {
-            return SyntaxFactory.QualifiedName(SDataName, CS.GenericName("ObjectSet", keyType, objectType));
-        }
 
         internal static QualifiedNameSyntax LoadingContextName {
             get { return CS.QualifiedName(SDataName, "LoadingContext"); }
-        }
-        internal static QualifiedNameSyntax TextSpanName {
-            get { return CS.QualifiedName(SDataName, "TextSpan"); }
         }
         internal static MemberAccessExpressionSyntax SerializerExpr {
             get { return CS.MemberAccessExpr(SDataName, "Serializer"); }

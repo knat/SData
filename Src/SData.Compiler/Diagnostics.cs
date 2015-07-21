@@ -19,24 +19,26 @@ namespace SData.Compiler {
         InvalidGlobalTypeReference,
         InvalidClassReference,
         InvalidAtomReference,
-        InvalidSimpleGlobalTypeReference,
         CircularReferenceNotAllowed,
         InvalidAtomValue,
         BaseClassIsSealed,
-        KeySelectorNotAllowedForSimpleSet,
-        KeySelectorRequiredForObjectSet,
+        KeyRequiredForClassUsedAsSetItemOrMapKey,
+        KeyRequiredForClassUsedAsKey,
+        KeyAlreadyDefinedInBaseClass,
         InvalidPropertyReference,
-        ObjectSetKeyCannotBeNullable,
-        InvalidObjectSetKey,
-        ObjectSetKeyMustBeSimpleType,
+        KeyTypeCannotBeNullable,
+        KeyTypeCannotBeCollection,
+        InvalidKeyStep,
 
         //
         InvalidSchemaNamespaceAttribute,
+        Invalid__CompilerSchemaNamespaceAttribute,
         InvalidSchemaNamespaceAttributeUri,
         DuplicateSchemaNamespaceAttributeUri,
+        Duplicate__CompilerSchemaNamespaceAttributeUri,
         InvalidSchemaNamespaceAttributeNamespaceName,
+        Invalid__CompilerSchemaNamespaceAttributeNamespaceName,
         SchemaNamespaceAttributeRequired,
-        Invalid__CompilerSchemaNamespaceAttribute,
         //
         InvalidSchemaClassAttribute,
         InvalidSchemaClassAttributeName,
@@ -98,40 +100,44 @@ namespace SData.Compiler {
                     return "Invalid class reference '{0}'.".InvFormat(_msgArgs);
                 case DiagCodeEx.InvalidAtomReference:
                     return "Invalid atom reference '{0}'.".InvFormat(_msgArgs);
-                case DiagCodeEx.InvalidSimpleGlobalTypeReference:
-                    return "Invalid simple global type(atom or enum) reference '{0}'.".InvFormat(_msgArgs);
                 case DiagCodeEx.CircularReferenceNotAllowed:
                     return "Circular reference not allowed.";
                 case DiagCodeEx.InvalidAtomValue:
                     return "Invalid atom '{0}' value '{1}'.".InvFormat(_msgArgs);
                 case DiagCodeEx.BaseClassIsSealed:
                     return "Base class is sealed.";
-                case DiagCodeEx.KeySelectorNotAllowedForSimpleSet:
-                    return "Key selector not allowed for simple set.";
-                case DiagCodeEx.KeySelectorRequiredForObjectSet:
-                    return "Key selector required for object set.";
+                case DiagCodeEx.KeyRequiredForClassUsedAsSetItemOrMapKey:
+                    return "Key required for class used as set item or map key.";
+                case DiagCodeEx.KeyRequiredForClassUsedAsKey:
+                    return "Key required for class used as key.";
+                case DiagCodeEx.KeyAlreadyDefinedInBaseClass:
+                    return "Key already defined in base class.";
                 case DiagCodeEx.InvalidPropertyReference:
                     return "Invalid property reference '{0}'.".InvFormat(_msgArgs);
-                case DiagCodeEx.ObjectSetKeyCannotBeNullable:
-                    return "Object set key cannot be nullable.";
-                case DiagCodeEx.InvalidObjectSetKey:
-                    return "Invalid object set key.";
-                case DiagCodeEx.ObjectSetKeyMustBeSimpleType:
-                    return "Object set key must be simple type.";
+                case DiagCodeEx.KeyTypeCannotBeNullable:
+                    return "Key type cannot be nullable.";
+                case DiagCodeEx.KeyTypeCannotBeCollection:
+                    return "Key type cannot be collection.";
+                case DiagCodeEx.InvalidKeyStep:
+                    return "Invalid key step. Class type property expected.";
 
                 //
                 case DiagCodeEx.InvalidSchemaNamespaceAttribute:
                     return "Invalid SchemaNamespaceAttribute.";
+                case DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute:
+                    return "Invalid __CompilerSchemaNamespaceAttribute at assembly '{0}'.".InvFormat(_msgArgs);
                 case DiagCodeEx.InvalidSchemaNamespaceAttributeUri:
                     return "Invalid SchemaNamespaceAttribute uri '{0}'.".InvFormat(_msgArgs);
                 case DiagCodeEx.DuplicateSchemaNamespaceAttributeUri:
                     return "Duplicate SchemaNamespaceAttribute uri '{0}'.".InvFormat(_msgArgs);
+                case DiagCodeEx.Duplicate__CompilerSchemaNamespaceAttributeUri:
+                    return "Duplicate __CompilerSchemaNamespaceAttribute uri '{0}' at assembly '{1}'.  Make sure one schema namespace is implemented in only one assembly.".InvFormat(_msgArgs);
                 case DiagCodeEx.InvalidSchemaNamespaceAttributeNamespaceName:
                     return "Invalid SchemaNamespaceAttribute namespaceName '{0}'.".InvFormat(_msgArgs);
+                case DiagCodeEx.Invalid__CompilerSchemaNamespaceAttributeNamespaceName:
+                    return "Invalid __CompilerSchemaNamespaceAttribute namespaceName '{0}' at assembly '{1}'.".InvFormat(_msgArgs);
                 case DiagCodeEx.SchemaNamespaceAttributeRequired:
                     return "SchemaNamespaceAttribute required for uri '{0}'.".InvFormat(_msgArgs);
-                case DiagCodeEx.Invalid__CompilerSchemaNamespaceAttribute:
-                    return "Invalid __CompilerSchemaNamespaceAttribute. assembly: '{0}', uri argument: '{1}', namespaceName argument: '{2}'. Make sure one schema namespace is implemented in only one assembly, or you should rebuild that assembly.".InvFormat(_msgArgs);
                 //
                 case DiagCodeEx.InvalidSchemaClassAttribute:
                     return "Invalid SchemaClassAttribute.";
@@ -144,7 +150,7 @@ namespace SData.Compiler {
                 case DiagCodeEx.SchemaClassCannotBeStatic:
                     return "Schema class cannot be static.";
                 case DiagCodeEx.NonAbstractSchemaClassRequired:
-                    return "Non-abstract class required.";
+                    return "Non-abstract schema class required.";
                 case DiagCodeEx.ParameterlessConstructorRequired:
                     return "Parameterless constructor required.";
                 //

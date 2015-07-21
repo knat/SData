@@ -109,14 +109,14 @@ namespace SData.Compiler {
                 foreach (var nsInfo in nsInfoMap.Values) {
                     nsInfo.MapGlobalTypeMembers();
                 }
-                var cuAttSyntaxList = new List<AttributeListSyntax>();
+                var cuAttListSyntaxList = new List<AttributeListSyntax>();
                 var cuMemberSyntaxList = new List<MemberDeclarationSyntax>();
                 var globalTypeMdRefSyntaxList = new List<ExpressionSyntax>();
                 foreach (var nsInfo in nsInfoMap.Values) {
                     if (!nsInfo.IsRef) {
                         List<string> dottedPropertyNames;
                         var dottedTypeNames = nsInfo.GetRefData(out dottedPropertyNames);
-                        cuAttSyntaxList.Add(CS.AttributeList("assembly", CSEX.__CompilerSchemaNamespaceAttributeName,
+                        cuAttListSyntaxList.Add(CS.AttributeList("assembly", CSEX.__CompilerSchemaNamespaceAttributeName,
                             SyntaxFactory.AttributeArgument(CS.Literal(nsInfo.Uri)),
                             SyntaxFactory.AttributeArgument(CS.Literal(nsInfo.DottedName.ToString())),
                             SyntaxFactory.AttributeArgument(CS.NewArrOrNullExpr(CS.StringArrayType, dottedTypeNames.Select(i => CS.Literal(i)))),
@@ -140,7 +140,7 @@ namespace SData.Compiler {
                     ));
                 code = GeneratedFileBanner +
                     SyntaxFactory.CompilationUnit(default(SyntaxList<ExternAliasDirectiveSyntax>), default(SyntaxList<UsingDirectiveSyntax>),
-                        SyntaxFactory.List(cuAttSyntaxList), SyntaxFactory.List(cuMemberSyntaxList)).NormalizeWhitespace().ToString();
+                        SyntaxFactory.List(cuAttListSyntaxList), SyntaxFactory.List(cuMemberSyntaxList)).NormalizeWhitespace().ToString();
 
                 return true;
             }
@@ -150,123 +150,6 @@ namespace SData.Compiler {
             }
             return false;
         }
-        //private static bool CompileCore(CompilerContext context, List<CompilationUnitNode> cuList,
-        //    List<string> csFileList, List<string> csPpList, List<MetadataReference> csRefList, string assemblyName, ref string code) {
-        //    try {
-        //        CompilerContext.Current = context;
-        //        var nsList = new List<NamespaceNode>();
-        //        foreach (var cu in cuList) {
-        //            nsList.AddRange(cu.NamespaceList);
-        //        }
-        //        if (nsList.Count == 0) {
-        //            return true;
-        //        }
-        //        var nsMap = new LogicalNamespaceMap();
-        //        foreach (var ns in nsList) {
-        //            var uri = ns.UriValue;
-        //            LogicalNamespace logicalNS;
-        //            if (!nsMap.TryGetValue(uri, out logicalNS)) {
-        //                logicalNS = new LogicalNamespace();
-        //                nsMap.Add(uri, logicalNS);
-        //            }
-        //            logicalNS.NamespaceList.Add(ns);
-        //            ns.LogicalNamespace = logicalNS;
-        //        }
-        //        foreach (var ns in nsList) {
-        //            ns.ResolveImports(nsMap);
-        //        }
-        //        foreach (var logicalNs in nsMap.Values) {
-        //            logicalNs.CheckDuplicateGlobalTypes();
-        //        }
-        //        foreach (var ns in nsList) {
-        //            ns.Resolve();
-        //        }
-        //        foreach (var logicalNs in nsMap.Values) {
-        //            logicalNs.NamespaceInfo = new NamespaceInfo(logicalNs.Uri);
-        //        }
-        //        foreach (var ns in nsList) {
-        //            ns.CreateInfos();
-        //        }
-        //        //
-        //        if (csFileList.Count > 0) {
-        //            var parseOpts = new CSharpParseOptions(preprocessorSymbols: csPpList, documentationMode: DocumentationMode.None);
-        //            var compilation = CSharpCompilation.Create(
-        //                assemblyName: "__TEMP__",
-        //                syntaxTrees: csFileList.Select(csFile => CSharpSyntaxTree.ParseText(text: File.ReadAllText(csFile), options: parseOpts, path: csFile)),
-        //                references: csRefList,
-        //                options: _compilationOptions);
-        //            foreach (var csRef in csRefList) {
-        //                if (csRef.Properties.Kind == MetadataImageKind.Assembly) {
-        //                    var assSymbol = compilation.GetAssemblyOrModuleSymbol(csRef) as IAssemblySymbol;
-        //                    if (assSymbol != null) {
-        //                        CSEX.MapNamespaces(nsMap, assSymbol, true);
-        //                    }
-        //                }
-        //            }
-        //            var compilationAssSymbol = compilation.Assembly;
-        //            if (CSEX.MapNamespaces(nsMap, compilationAssSymbol, false) > 0) {
-        //                foreach (var logicalNs in nsMap.Values) {
-        //                    if (logicalNs.DottedName == null) {
-        //                        CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.ContractNamespaceAttributeRequired, logicalNs.Uri), default(TextSpan));
-        //                    }
-        //                }
-        //                CSEX.MapClasses(nsMap, compilationAssSymbol.GlobalNamespace);
-        //                foreach (var logicalNs in nsMap.Values) {
-        //                    logicalNs.NamespaceInfo.SetGlobalTypeDottedNames();
-        //                }
-        //                foreach (var logicalNs in nsMap.Values) {
-        //                    logicalNs.NamespaceInfo.MapGlobalTypeMembers();
-        //                }
-        //                List<AttributeListSyntax> cuCompierAttList = new List<AttributeListSyntax>();
-        //                List<MemberDeclarationSyntax> cuMemberSyntaxList = new List<MemberDeclarationSyntax>();
-        //                List<ExpressionSyntax> globalTypeMdSyntaxList = new List<ExpressionSyntax>();
-        //                var userAssemblyMetadataName = CSEX.UserAssemblyMetadataName(assemblyName);
-        //                var assMdExpr = CS.MemberAccessExpr(CS.GlobalAliasQualifiedName(userAssemblyMetadataName), "Instance");
-        //                System.Text.StringBuilder sb = null;
-        //                foreach (var logicalNs in nsMap.Values) {
-        //                    var nsInfo = logicalNs.NamespaceInfo;
-        //                    string uri, csns;
-        //                    var mdns = nsInfo.GetMdNamespace(out uri, out csns);
-        //                    if (mdns != null) {
-        //                        if (sb == null) {
-        //                            sb = new System.Text.StringBuilder(1024 * 2);
-        //                        }
-        //                        else {
-        //                            sb.Clear();
-        //                        }
-        //                        //mdns.Save(sb);
-        //                        var data = sb.ToString();
-        //                        cuCompierAttList.Add(CS.AttributeList("assembly", CSEX.__CompilerSchemaNamespaceAttributeName,
-        //                            SyntaxFactory.AttributeArgument(CS.Literal(uri)),
-        //                            SyntaxFactory.AttributeArgument(CS.Literal(csns)),
-        //                            SyntaxFactory.AttributeArgument(CS.Literal(data))));
-        //                    }
-        //                    nsInfo.GetSyntax(cuMemberSyntaxList, assMdExpr, globalTypeMdSyntaxList);
-        //                }
-        //                if (globalTypeMdSyntaxList.Count > 0) {
-        //                    //>public sealed class AssemblyMetadata_XX : AssemblyMetadata {
-        //                    //>  public static readonly AssemblyMetadata Instance = new AssemblyMetadata_XX(new GlobalTypeMetadata[]{ ... });
-        //                    //>  private AssemblyMetadata_XX(GlobalTypeMetadata[] globalTypes):base(globalTypes) { }
-        //                    //>}
-        //                    cuMemberSyntaxList.Add(CS.Class(null, CS.PublicSealedTokenList, userAssemblyMetadataName, new[] { CSEX.AssemblyMdName },
-        //                        CS.Field(CS.PublicStaticReadOnlyTokenList, CSEX.AssemblyMdName, "Instance",
-        //                            CS.NewObjExpr(CS.IdName(userAssemblyMetadataName), CS.NewArrExpr(CSEX.GlobalTypeMdArrayType, globalTypeMdSyntaxList))),
-        //                        CS.Constructor(CS.PrivateTokenList, userAssemblyMetadataName,
-        //                            new[] { CS.Parameter(CSEX.GlobalTypeMdArrayType, "globalTypes") },
-        //                            CS.ConstructorInitializer(true, CS.IdName("globalTypes")))
-        //                        ));
-        //                }
-        //                code = GeneratedFileBanner +
-        //                    SyntaxFactory.CompilationUnit(default(SyntaxList<ExternAliasDirectiveSyntax>), default(SyntaxList<UsingDirectiveSyntax>),
-        //                        SyntaxFactory.List(cuCompierAttList), SyntaxFactory.List(cuMemberSyntaxList)).NormalizeWhitespace().ToString();
-        //            }
-        //        }
-        //        return true;
-        //    }
-        //    catch (LoadingException) { }
-        //    return false;
-        //}
-
 
     }
 }

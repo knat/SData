@@ -3,12 +3,12 @@
 namespace SData {
     public class UntypedObject {
         public UntypedObject() { }
+        public UntypedObject(Dictionary<string, object> properties)
+            : this(default(FullName), properties) {
+        }
         public UntypedObject(FullName classFullName, Dictionary<string, object> properties) {
             ClassFullName = classFullName;
             Properties = properties;
-        }
-        public UntypedObject(Dictionary<string, object> properties)
-            : this(default(FullName), properties) {
         }
         public FullName ClassFullName { get; set; }
         public bool HasClassFullName {
