@@ -1,25 +1,24 @@
-﻿using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 
 namespace SData.Internal {
     public abstract class ParserBase {
         protected ParserBase() {
         }
-        protected void Set(string filePath, TextReader reader, LoadingContext context) {
+        protected virtual void Init(string filePath, TextReader reader, LoadingContext context) {
             _lexer = Lexer.Get(filePath, reader, context);
             _context = context;
             _token = null;
         }
-        protected void Clear() {
+        protected virtual void Clear() {
             if (_lexer != null) {
                 _lexer.Clear();
             }
             _context = null;
+            _token = null;
         }
         private Lexer _lexer;
         protected LoadingContext _context;
         private Token? _token;
-        //
         //
         protected void Error(int code, string errMsg, TextSpan textSpan) {
             _context.AddDiagnostic(DiagnosticSeverity.Error, code, errMsg, textSpan);
@@ -48,7 +47,6 @@ namespace SData.Internal {
             return (_token ?? (_token = _lexer.GetToken())).Value;
         }
         protected void ConsumeToken() {
-            Debug.Assert(_token != null);
             _token = null;
         }
         protected bool PeekToken(int kind) {
@@ -100,7 +98,6 @@ namespace SData.Internal {
         protected void EndOfFileExpected() {
             TokenExpected(char.MaxValue, "End-of-file expected.");
         }
-
         protected bool Name(out Token result) {
             result = GetToken();
             if (result.IsName) {

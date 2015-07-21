@@ -17,10 +17,17 @@ namespace SData.Internal {
             if (classTypeMd == null) throw new ArgumentNullException("classTypeMd");
             return Instance.ParsingUnit(filePath, reader, context, classTypeMd, out result);
         }
+        protected override void Init(string filePath, TextReader reader, LoadingContext context) {
+            base.Init(filePath, reader, context);
+            _aliasUriListStack.Clear();
+        }
+        protected override void Clear() {
+            base.Clear();
+            _aliasUriListStack.Clear();
+        }
         private bool ParsingUnit(string filePath, TextReader reader, LoadingContext context, ClassTypeMd classTypeMd, out object result) {
             try {
-                Set(filePath, reader, context);
-                _aliasUriListStack.Clear();
+                Init(filePath, reader, context);
                 object obj;
                 TextSpan textSpan;
                 if (ClassValue(classTypeMd, out obj, out textSpan)) {
@@ -42,9 +49,6 @@ namespace SData.Internal {
 
         private string GetUri(Token aliasToken) {
             var alias = aliasToken.Value;
-            //if (alias == "sys") {
-            //    return Extensions.SystemUri;
-            //}
             foreach (var auList in _aliasUriListStack) {
                 foreach (var au in auList) {
                     if (au.Alias == alias) {
@@ -58,25 +62,23 @@ namespace SData.Internal {
         private bool ClassValue(ClassTypeMd declaredClsMd, out object result, out TextSpan textSpan) {
             var hasAliasUriList = false;
             if (Token('<')) {
-                List<AliasUri> list = null;
+                List<AliasUri> auList = null;
                 while (true) {
                     Token aliasToken;
                     if (Name(out aliasToken)) {
                         var alias = aliasToken.Value;
-                        //if (alias == "sys") {
-                        //}
-                        if (list == null) {
-                            list = new List<AliasUri>();
+                        if (auList == null) {
+                            auList = new List<AliasUri>();
                         }
                         else {
-                            foreach (var item in list) {
+                            foreach (var item in auList) {
                                 if (item.Alias == alias) {
                                     ErrorAndThrow(new DiagMsg(DiagnosticCode.DuplicateUriAlias, alias), aliasToken.TextSpan);
                                 }
                             }
                         }
                         TokenExpected('=');
-                        list.Add(new AliasUri(StringExpected().Value, alias));
+                        auList.Add(new AliasUri(StringExpected().Value, alias));
                         if (!Token(',')) {
                             break;
                         }
@@ -86,18 +88,14 @@ namespace SData.Internal {
                     }
                 }
                 TokenExpected('>');
-                if (list != null) {
-                    _aliasUriListStack.Push(list);
+                if (auList != null) {
+                    _aliasUriListStack.Push(auList);
                     hasAliasUriList = true;
                 }
             }
-
-
-            textSpan = default(TextSpan);
             var hasTypeIndicator = false;
             ClassTypeMd clsMd = null;
             var fullName = default(FullName);
-            //var clsNameTS = default(TextSpan);
             if (Token('(')) {
                 hasTypeIndicator = true;
                 var aliasToken = NameExpected();
@@ -117,111 +115,113 @@ namespace SData.Internal {
                     }
                 }
             }
+            textSpan = default(TextSpan);
             Token openBraceToken;
-            if (Token('{', out openBraceToken)) {
-                if (declaredClsMd != null) {
-                    if (!hasTypeIndicator) {
-                        clsMd = declaredClsMd;
-                        fullName = clsMd.FullName;
-                        textSpan = openBraceToken.TextSpan;
-                    }
-                    if (clsMd.IsAbstract) {
-                        ErrorAndThrow(new DiagMsg(DiagnosticCode.ClassIsAbstract, fullName.ToString()), textSpan);
-                    }
-                    var obj = clsMd.CreateInstance();
-                    //clsMd.SetTextSpan(obj, clsNameTS);
-                    if (!clsMd.InvokeOnLoad(true, obj, _context, textSpan)) {
-                        Throw();
-                    }
-                    var propMdMap = clsMd._propertyMap;
-                    HashSet<string> propNameSet = null;
-                    Dictionary<string, object> unknownPropMap = null;
-                    while (true) {
-                        Token propNameToken;
-                        if (Name(out propNameToken)) {
-                            var propName = propNameToken.Value;
-                            if (propNameSet == null) {
-                                propNameSet = new HashSet<string>();
-                            }
-                            else if (propNameSet.Contains(propName)) {
-                                ErrorAndThrow(new DiagMsg(DiagnosticCode.DuplicateUriAlias, propName), propNameToken.TextSpan);
-                            }
-                            propNameSet.Add(propName);
-                            TokenExpected('=');
-                            PropertyMd propMd;
-                            if (propMdMap.TryGetValue(propName, out propMd)) {
-                                propMd.SetValue(obj, LocalValueExpected(propMd.Type));
-                            }
-                            else {
-                                if (unknownPropMap == null) {
-                                    unknownPropMap = new Dictionary<string, object>();
-                                }
-                                unknownPropMap.Add(propName, LocalValueExpected(null));
-                            }
-                            if (!Token(',')) {
-                                break;
-                            }
+            if (!Token('{', out openBraceToken)) {
+                if (hasAliasUriList || hasTypeIndicator) {
+                    ErrorAndThrow("{ expected.");
+                }
+                result = null;
+                return false;
+            }
+            if (!hasTypeIndicator) {
+                textSpan = openBraceToken.TextSpan;
+            }
+            if (declaredClsMd != null) {
+                if (!hasTypeIndicator) {
+                    clsMd = declaredClsMd;
+                    fullName = declaredClsMd.FullName;
+                }
+                if (clsMd.IsAbstract) {
+                    ErrorAndThrow(new DiagMsg(DiagnosticCode.ClassIsAbstract, fullName.ToString()), textSpan);
+                }
+                var obj = clsMd.CreateInstance();
+                if (!clsMd.InvokeOnLoad(true, obj, _context, textSpan)) {
+                    Throw();
+                }
+                var propMdMap = clsMd._propertyMap;
+                HashSet<string> propNameSet = null;
+                Dictionary<string, object> unknownPropMap = null;
+                while (true) {
+                    Token propNameToken;
+                    if (Name(out propNameToken)) {
+                        var propName = propNameToken.Value;
+                        if (propNameSet == null) {
+                            propNameSet = new HashSet<string>();
+                        }
+                        else if (propNameSet.Contains(propName)) {
+                            ErrorAndThrow(new DiagMsg(DiagnosticCode.DuplicatePropertyName, propName), propNameToken.TextSpan);
+                        }
+                        propNameSet.Add(propName);
+                        TokenExpected('=');
+                        PropertyMd propMd;
+                        if (propMdMap.TryGetValue(propName, out propMd)) {
+                            propMd.SetValue(obj, LocalValueExpected(propMd.Type));
                         }
                         else {
+                            if (unknownPropMap == null) {
+                                unknownPropMap = new Dictionary<string, object>();
+                            }
+                            unknownPropMap.Add(propName, LocalValueExpected(null));
+                        }
+                        if (!Token(',')) {
                             break;
                         }
                     }
-                    var closeBraceToken = TokenExpected('}');
-                    if (propMdMap.Count > 0) {
-                        var needThrow = false;
-                        foreach (var propMd in propMdMap.Values) {
-                            if (!propMd.Type.IsNullable && (propNameSet == null || !propNameSet.Contains(propMd.Name))) {
-                                Error(new DiagMsg(DiagnosticCode.PropertyMissing, propMd.Name), closeBraceToken.TextSpan);
-                                needThrow = true;
-                            }
-                        }
-                        if (needThrow) {
-                            Throw();
+                    else {
+                        break;
+                    }
+                }
+                var closeBraceToken = TokenExpected('}');
+                if (propMdMap.Count > 0) {
+                    var needThrow = false;
+                    foreach (var propMd in propMdMap.Values) {
+                        if (!propMd.Type.IsNullable && (propNameSet == null || !propNameSet.Contains(propMd.Name))) {
+                            Error(new DiagMsg(DiagnosticCode.PropertyMissing, propMd.Name), closeBraceToken.TextSpan);
+                            needThrow = true;
                         }
                     }
-                    if (unknownPropMap != null) {
-                        clsMd.SetUnknownProperties(obj, unknownPropMap);
-                    }
-                    if (!clsMd.InvokeOnLoad(false, obj, _context, textSpan)) {
+                    if (needThrow) {
                         Throw();
                     }
-                    result = obj;
                 }
-                else {
-                    Dictionary<string, object> propMap = null;
-                    while (true) {
-                        Token propNameToken;
-                        if (Name(out propNameToken)) {
-                            var propName = propNameToken.Value;
-                            if (propMap == null) {
-                                propMap = new Dictionary<string, object>();
-                            }
-                            else if (propMap.ContainsKey(propName)) {
-                                ErrorAndThrow(new DiagMsg(DiagnosticCode.DuplicateUriAlias, propName), propNameToken.TextSpan);
-                            }
-                            TokenExpected('=');
-                            propMap.Add(propName, LocalValueExpected(null));
-                            if (!Token(',')) {
-                                break;
-                            }
+                if (unknownPropMap != null) {
+                    clsMd.SetUnknownProperties(obj, unknownPropMap);
+                }
+                if (!clsMd.InvokeOnLoad(false, obj, _context, textSpan)) {
+                    Throw();
+                }
+                result = obj;
+            }
+            else {
+                Dictionary<string, object> propMap = null;
+                while (true) {
+                    Token propNameToken;
+                    if (Name(out propNameToken)) {
+                        var propName = propNameToken.Value;
+                        if (propMap == null) {
+                            propMap = new Dictionary<string, object>();
                         }
-                        else {
+                        else if (propMap.ContainsKey(propName)) {
+                            ErrorAndThrow(new DiagMsg(DiagnosticCode.DuplicatePropertyName, propName), propNameToken.TextSpan);
+                        }
+                        TokenExpected('=');
+                        propMap.Add(propName, LocalValueExpected(null));
+                        if (!Token(',')) {
                             break;
                         }
                     }
-                    TokenExpected('}');
-                    result = new UntypedObject(hasTypeIndicator ? (FullName?)fullName : null, propMap);
+                    else {
+                        break;
+                    }
                 }
-                if (hasAliasUriList) {
-                    _aliasUriListStack.Pop();
-                }
-                return true;
+                TokenExpected('}');
+                result = new UntypedObject(fullName, propMap);
             }
-            else if (hasAliasUriList || hasTypeIndicator) {
-                ErrorAndThrow("{ expected.");
+            if (hasAliasUriList) {
+                _aliasUriListStack.Pop();
             }
-            result = null;
-            return false;
+            return true;
         }
         private object LocalValueExpected(LocalTypeMd typeMd) {
             object value;
@@ -315,9 +315,8 @@ namespace SData.Internal {
                 if (typeMd != null) {
                     var nonNullableTypeMd = typeMd.NonNullableType;
                     var typeKind = nonNullableTypeMd.Kind;
-                    var isList = typeKind == TypeKind.List;
                     var isSet = typeKind == TypeKind.Set;
-                    if (!isList && !isSet) {
+                    if (typeKind != TypeKind.List && !isSet) {
                         ErrorAndThrow(new DiagMsg(DiagnosticCode.SpecificValueExpected, typeKind.ToString()), token.TextSpan);
                     }
                     var collTypeMd = (CollectionTypeMd)nonNullableTypeMd;

@@ -25,8 +25,8 @@ namespace SData.Internal {
                     return "Class '{0}' not equal to or derive from the declared class '{1}'.".InvFormat(_msgArgs);
                 case DiagnosticCode.ClassIsAbstract:
                     return "Class '{0}' is abstract.".InvFormat(_msgArgs);
-                case DiagnosticCode.InvalidPropertyName:
-                    return "Invalid property name '{0}'.".InvFormat(_msgArgs);
+                case DiagnosticCode.DuplicatePropertyName:
+                    return "Duplicate property name '{0}'.".InvFormat(_msgArgs);
                 case DiagnosticCode.PropertyMissing:
                     return "Property '{0}' missing.".InvFormat(_msgArgs);
                 case DiagnosticCode.NullNotAllowed:

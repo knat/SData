@@ -13,9 +13,6 @@ namespace SData {
             StartPosition = startPosition;
             EndPosition = endPosition;
         }
-        //internal TextSpan(string filePath, Token token)
-        //    : this(filePath, token.StartIndex, token.Length, token.StartPosition, token.EndPosition) {
-        //}
         [DataMember]
         public readonly string FilePath;
         [DataMember]

@@ -3,7 +3,6 @@ using SData.Internal;
 
 namespace SData {
     public static class AtomExtensions {
-
         public static object TryParse(TypeKind typeKind, string s, bool isReadOnly = false) {
             switch (typeKind) {
                 case TypeKind.String:
@@ -135,7 +134,55 @@ namespace SData {
             }
             return null;
         }
+        public static string ToString(TypeKind typeKind, object value) {
+            switch (typeKind) {
+                case TypeKind.String:
+                    return (string)value;
+                case TypeKind.IgnoreCaseString:
+                    return ((IgnoreCaseString)value).Value;
+                case TypeKind.Char:
+                    return ((char)value).ToString();
+                case TypeKind.Decimal:
+                    return ((decimal)value).ToInvString();
+                case TypeKind.Int64:
+                    return ((long)value).ToInvString();
+                case TypeKind.Int32:
+                    return ((int)value).ToInvString();
+                case TypeKind.Int16:
+                    return ((short)value).ToInvString();
+                case TypeKind.SByte:
+                    return ((sbyte)value).ToInvString();
+                case TypeKind.UInt64:
+                    return ((ulong)value).ToInvString();
+                case TypeKind.UInt32:
+                    return ((uint)value).ToInvString();
+                case TypeKind.UInt16:
+                    return ((ushort)value).ToInvString();
+                case TypeKind.Byte:
+                    return ((byte)value).ToInvString();
+                case TypeKind.Double: {
+                        bool isLiteral;
+                        return ((double)value).ToInvString(out isLiteral);
+                    }
+                case TypeKind.Single: {
+                        bool isLiteral;
+                        return ((float)value).ToInvString(out isLiteral);
+                    }
+                case TypeKind.Boolean:
+                    return ((bool)value).ToInvString();
+                case TypeKind.Binary:
+                    return ((Binary)value).ToBase64String();
+                case TypeKind.Guid:
+                    return ((Guid)value).ToInvString();
+                case TypeKind.TimeSpan:
+                    return ((TimeSpan)value).ToInvString();
+                case TypeKind.DateTimeOffset:
+                    return ((DateTimeOffset)value).ToInvString();
 
+                default:
+                    throw new ArgumentException("Invalid type kind: " + typeKind.ToString());
+            }
+        }
 
 
     }

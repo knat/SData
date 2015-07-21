@@ -16,9 +16,6 @@ namespace SData {
             result = null;
             return false;
         }
-        //public static bool TryLoad<T>(string filePath, string text, LoadingContext context, ClassTypeMd classTypeMd, out T result) where T : class {
-        //    return TryLoad<T>(filePath, new SimpleStringReader(text), context, classTypeMd, out result);
-        //}
         public static void Save(object obj, ClassTypeMd classTypeMd, TextWriter writer, string indentString = "\t", string newLineString = "\n") {
             if (writer == null) throw new ArgumentNullException("writer");
             var sb = StringBuilderBuffer.Acquire();
@@ -57,8 +54,8 @@ namespace SData {
             else {
                 var utobj = obj as UntypedObject;
                 if (utobj != null) {
-                    if (utobj.ClassFullName != null) {
-                        context.AppendTypeIndicator(utobj.ClassFullName.Value);
+                    if (utobj.HasClassFullName) {
+                        context.AppendTypeIndicator(utobj.ClassFullName);
                     }
                     context.Append('{');
                     context.AppendLine();
@@ -88,11 +85,12 @@ namespace SData {
             }
         }
         private static void SaveLocalValue(object value, LocalTypeMd typeMd, SavingContext context) {
-            var sb = context.StringBuilder;
             if (value == null) {
                 context.Append("null");
+                return;
             }
-            else if (typeMd == null) {
+            var sb = context.StringBuilder;
+            if (typeMd == null) {
                 var typeKind = AtomExtensionsEx.GetTypeKind(value);
                 if (typeKind != TypeKind.None) {
                     SaveAtomValue(value, typeKind, context);
@@ -157,7 +155,7 @@ namespace SData {
                     }
                 }
             }
-            else {
+            else {//typeMd != null
                 var nonNullableTypeMd = typeMd.NonNullableType;
                 var typeKind = nonNullableTypeMd.Kind;
                 if (typeKind.IsAtom()) {
@@ -170,7 +168,7 @@ namespace SData {
                     var enumMd = nonNullableTypeMd.TryGetGlobalType<EnumTypeMd>();
                     var memberName = enumMd.TryGetMemberName(value);
                     if (memberName == null) {
-                        context.Append("null");
+                        SaveAtomValue(value, enumMd.UnderlyingType.Kind, context);
                     }
                     else {
                         context.AppendFullName(enumMd.FullName);
@@ -202,7 +200,7 @@ namespace SData {
                     context.PopIndent();
                     context.Append(']');
                 }
-                else {
+                else {//list or set
                     var itemMd = ((CollectionTypeMd)nonNullableTypeMd).ItemOrValueType;
                     context.Append('[');
                     context.AppendLine();

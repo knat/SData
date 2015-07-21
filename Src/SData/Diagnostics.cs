@@ -14,13 +14,12 @@ namespace SData {
     public enum DiagnosticCode {
         None = 0,
         Parsing = -1000,
-
         DuplicateUriAlias,
         InvalidUriReference,
         InvalidClassReference,
         ClassNotEqualToOrDeriveFromTheDeclared,
         ClassIsAbstract,
-        InvalidPropertyName,
+        DuplicatePropertyName,
         PropertyMissing,
         NullNotAllowed,
         ValueExpected,
@@ -43,9 +42,6 @@ namespace SData {
             Message = message;
             TextSpan = textSpan;
         }
-        //public Diagnostic(DiagnosticSeverity severity, DiagMsg diagMsg, TextSpan textSpan)
-        //    : this(severity, (int)diagMsg.Code, diagMsg.GetMessage(), textSpan) {
-        //}
         [DataMember]
         public readonly DiagnosticSeverity Severity;
         [DataMember]
@@ -69,11 +65,6 @@ namespace SData {
                 return Severity == DiagnosticSeverity.Info;
             }
         }
-        //internal DiagnosticCode DiagnosticCode {
-        //    get {
-        //        return (DiagnosticCode)Code;
-        //    }
-        //}
         public bool HasTextSpan {
             get {
                 return TextSpan.IsValid;

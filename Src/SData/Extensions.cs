@@ -31,19 +31,6 @@ namespace SData {
                 return hash;
             }
         }
-        //
-        //internal static void CreateAndAdd<T>(ref List<T> list, T item) {
-        //    if (list == null) {
-        //        list = new List<T>();
-        //    }
-        //    list.Add(item);
-        //}
-        //internal static int CountOrZero<T>(this List<T> list) {
-        //    return list == null ? 0 : list.Count;
-        //}
-
-        //
-        //
 
     }
 }

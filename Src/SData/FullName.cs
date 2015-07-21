@@ -8,6 +8,11 @@ namespace SData {
         }
         public readonly string Uri;
         public readonly string Name;
+        public bool IsValid {
+            get {
+                return Name != null;
+            }
+        }
         public bool Equals(FullName other) {
             return Uri == other.Uri && Name == other.Name;
         }

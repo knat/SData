@@ -57,7 +57,7 @@ namespace SData.Compiler {
         }
         private bool CompilationUnit(string filePath, TextReader reader, LoadingContext context, out CompilationUnitNode result) {
             try {
-                Set(filePath, reader, context);
+                Init(filePath, reader, context);
                 var cu = new CompilationUnitNode();
                 while (Namespace(cu)) ;
                 EndOfFileExpected();

@@ -21,7 +21,7 @@ namespace SData.Internal {
             TextSpan = textSpan;
         }
         public readonly int Kind;
-        public readonly string Value;//for TokenKind.NormalIdentifier to TokenKind.Real
+        public readonly string Value;//for TokenKind.NormalName to TokenKind.Real
         public readonly TextSpan TextSpan;
         public TokenKind TokenKind {
             get {

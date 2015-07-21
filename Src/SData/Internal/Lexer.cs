@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -12,7 +11,7 @@ namespace SData.Internal {
             get { return _instance ?? (_instance = new Lexer()); }
         }
         public static Lexer Get(string filePath, TextReader reader, LoadingContext context) {
-            return Instance.Set(filePath, reader, context);
+            return Instance.Init(filePath, reader, context);
         }
         private Lexer() {
             _buf = new char[_bufLength];
@@ -31,7 +30,7 @@ namespace SData.Internal {
         private const int _stringBuilderCapacity = 256;
         private StringBuilder _stringBuilder;
         //
-        private Lexer Set(string filePath, TextReader reader, LoadingContext context) {
+        private Lexer Init(string filePath, TextReader reader, LoadingContext context) {
             if (filePath == null) throw new ArgumentNullException("filePath");
             if (reader == null) throw new ArgumentNullException("reader");
             if (context == null) throw new ArgumentNullException("context");
@@ -86,21 +85,28 @@ namespace SData.Internal {
         private char GetNextNextChar() {
             return GetChar(2);
         }
-        private void AdvanceChar() {
+        private void AdvanceChar(bool checkNewLine) {
             _lastLine = _line;
             _lastColumn = _column;
             if (_index < _count) {
-                var ch = _buf[_index++];
-                ++_totalIndex;
-                if (IsNewLine(ch)) {
-                    if (ch == '\r' && GetChar() == '\n') {
-                        ++_index;
-                        ++_totalIndex;
+                if (checkNewLine) {
+                    var ch = _buf[_index++];
+                    ++_totalIndex;
+                    if (IsNewLine(ch)) {
+                        if (ch == '\r' && GetChar() == '\n') {
+                            ++_index;
+                            ++_totalIndex;
+                        }
+                        ++_line;
+                        _column = 1;
                     }
-                    ++_line;
-                    _column = 1;
+                    else {
+                        ++_column;
+                    }
                 }
                 else {
+                    ++_index;
+                    ++_totalIndex;
                     ++_column;
                 }
             }
@@ -111,7 +117,7 @@ namespace SData.Internal {
             _tokenStartIndex = _totalIndex;
             _tokenStartPosition = new TextPosition(_line, _column);
         }
-        private Token CreateToken(TokenKind tokenKind, string value = null) {
+        private Token CreateToken(TokenKind tokenKind, string value) {
             var startIndex = _tokenStartIndex;
             return new Token((int)tokenKind, value, new TextSpan(_filePath, startIndex, _totalIndex - startIndex,
                 _tokenStartPosition, new TextPosition(_lastLine, _lastColumn)));
@@ -122,7 +128,7 @@ namespace SData.Internal {
         }
         private Token CreateTokenAndAdvanceChar(char ch) {
             var token = new Token(ch, null, CreateTextSpan());
-            AdvanceChar();
+            AdvanceChar(false);
             return token;
         }
         private void ErrorAndThrow(string errMsg, TextSpan textSpan) {
@@ -134,11 +140,11 @@ namespace SData.Internal {
         }
         private enum State : byte {
             None = 0,
-            InWhitespaceOrNewLine,
+            //InWhitespaceOrNewLine,
             InSingleLineComment,
-            InMultiLineComment,
-            InNormalIdentifier,
-            InVerbatimIdentifier,
+            InDelimitedComment,
+            InNormalName,
+            InVerbatimName,
             InNormalString,
             InVerbatimString,
             InChar,
@@ -146,7 +152,6 @@ namespace SData.Internal {
             InNumberFraction,
             InNumberExponent,
         }
-
         public Token GetToken() {
             var state = State.None;
             StringBuilder sb = null;
@@ -154,145 +159,180 @@ namespace SData.Internal {
                 var ch = GetChar();
                 switch (state) {
                     case State.None:
-                        if (ch == char.MaxValue) {
-                            return CreateTokenAndAdvanceChar(ch);
-                        }
-                        else if (ch == '/') {
-                            var nextch = GetNextChar();
-                            if (nextch == '/') {
-                                state = State.InSingleLineComment;
-                                MarkTokenStart();
-                                AdvanceChar();
-                                AdvanceChar();
-                            }
-                            else if (nextch == '*') {
-                                state = State.InMultiLineComment;
-                                MarkTokenStart();
-                                AdvanceChar();
-                                AdvanceChar();
-                            }
-                            else {
+                        switch (ch) {
+                            case char.MaxValue:
                                 return CreateTokenAndAdvanceChar(ch);
-                            }
-                        }
-                        else if (ch == '@') {
-                            var nextch = GetNextChar();
-                            if (nextch == '"') {
-                                state = State.InVerbatimString;
-                                MarkTokenStart();
-                                AdvanceChar();
-                                AdvanceChar();
-                                sb = GetStringBuilder();
-                            }
-                            else if (IsIdentifierStartCharacter(nextch)) {
-                                state = State.InVerbatimIdentifier;
-                                MarkTokenStart();
-                                AdvanceChar();
-                                AdvanceChar();
-                                sb = GetStringBuilder();
-                                sb.Append(nextch);
-                            }
-                            else {
-                                return CreateTokenAndAdvanceChar(ch);
-                            }
-                        }
-                        else if (ch == '"') {
-                            state = State.InNormalString;
-                            MarkTokenStart();
-                            AdvanceChar();
-                            sb = GetStringBuilder();
-                        }
-                        else if (ch == '\'') {
-                            state = State.InChar;
-                            MarkTokenStart();
-                            AdvanceChar();
-                            sb = GetStringBuilder();
-                        }
-                        else if (ch == '.') {
-                            var nextch = GetNextChar();
-                            if (IsDecDigit(nextch)) {
-                                state = State.InNumberFraction;
-                                MarkTokenStart();
-                                AdvanceChar();
-                                AdvanceChar();
-                                sb = GetStringBuilder();
-                                sb.Append(ch);
-                                sb.Append(nextch);
-                            }
-                            else {
-                                return CreateTokenAndAdvanceChar(ch);
-                            }
-                        }
-                        else if (ch == ':') {
-                            var nextch = GetNextChar();
-                            if (nextch == ':') {
-                                MarkTokenStart();
-                                AdvanceChar();
-                                AdvanceChar();
-                                return CreateToken(TokenKind.ColonColon);
-                            }
-                            else {
-                                return CreateTokenAndAdvanceChar(ch);
-                            }
-                        }
-                        else if (ch == '#') {
-                            var nextch = GetNextChar();
-                            if (nextch == '[') {
-                                MarkTokenStart();
-                                AdvanceChar();
-                                AdvanceChar();
-                                return CreateToken(TokenKind.HashOpenBracket);
-                            }
-                            else {
-                                return CreateTokenAndAdvanceChar(ch);
-                            }
-                        }
-                        else if (IsWhitespace(ch) || IsNewLine(ch)) {
-                            state = State.InWhitespaceOrNewLine;
-                            MarkTokenStart();
-                            AdvanceChar();
-                        }
-                        else if (IsIdentifierStartCharacter(ch)) {
-                            state = State.InNormalIdentifier;
-                            MarkTokenStart();
-                            AdvanceChar();
-                            sb = GetStringBuilder();
-                            sb.Append(ch);
-                        }
-                        else if (IsDecDigit(ch)) {
-                            state = State.InNumberInteger;
-                            MarkTokenStart();
-                            AdvanceChar();
-                            sb = GetStringBuilder();
-                            sb.Append(ch);
-                        }
-                        else {
-                            return CreateTokenAndAdvanceChar(ch);
+                            case '/': {
+                                    var nextch = GetNextChar();
+                                    if (nextch == '/') {
+                                        state = State.InSingleLineComment;
+                                        MarkTokenStart();
+                                        AdvanceChar(false);
+                                        AdvanceChar(false);
+                                    }
+                                    else if (nextch == '*') {
+                                        state = State.InDelimitedComment;
+                                        MarkTokenStart();
+                                        AdvanceChar(false);
+                                        AdvanceChar(false);
+                                    }
+                                    else {
+                                        return CreateTokenAndAdvanceChar(ch);
+                                    }
+                                }
+                                break;
+                            case '@': {
+                                    var nextch = GetNextChar();
+                                    if (nextch == '"') {
+                                        state = State.InVerbatimString;
+                                        MarkTokenStart();
+                                        AdvanceChar(false);
+                                        AdvanceChar(false);
+                                        sb = GetStringBuilder();
+                                    }
+                                    else if (IsIdentifierStartCharacter(nextch)) {
+                                        state = State.InVerbatimName;
+                                        MarkTokenStart();
+                                        AdvanceChar(false);
+                                        AdvanceChar(false);
+                                        sb = GetStringBuilder();
+                                        sb.Append(nextch);
+                                    }
+                                    else {
+                                        return CreateTokenAndAdvanceChar(ch);
+                                    }
+                                }
+                                break;
+                            case '"': {
+                                    state = State.InNormalString;
+                                    MarkTokenStart();
+                                    AdvanceChar(false);
+                                    sb = GetStringBuilder();
+                                }
+                                break;
+                            case '\'': {
+                                    state = State.InChar;
+                                    MarkTokenStart();
+                                    AdvanceChar(false);
+                                    sb = GetStringBuilder();
+                                }
+                                break;
+                            case '-':
+                            case '+': {
+                                    var nextch = GetNextChar();
+                                    if (IsDecDigit(nextch)) {
+                                        state = State.InNumberInteger;
+                                        MarkTokenStart();
+                                        AdvanceChar(false);
+                                        AdvanceChar(false);
+                                        sb = GetStringBuilder();
+                                        sb.Append(ch);
+                                        sb.Append(nextch);
+                                    }
+                                    else if (nextch == '.') {
+                                        var nextnextch = GetNextNextChar();
+                                        if (IsDecDigit(nextnextch)) {
+                                            state = State.InNumberFraction;
+                                            MarkTokenStart();
+                                            AdvanceChar(false);
+                                            AdvanceChar(false);
+                                            AdvanceChar(false);
+                                            sb = GetStringBuilder();
+                                            sb.Append(ch);
+                                            sb.Append(nextch);
+                                            sb.Append(nextnextch);
+                                        }
+                                        else {
+                                            return CreateTokenAndAdvanceChar(ch);
+                                        }
+                                    }
+                                    else {
+                                        return CreateTokenAndAdvanceChar(ch);
+                                    }
+                                }
+                                break;
+                            case '.': {
+                                    var nextch = GetNextChar();
+                                    if (IsDecDigit(nextch)) {
+                                        state = State.InNumberFraction;
+                                        MarkTokenStart();
+                                        AdvanceChar(false);
+                                        AdvanceChar(false);
+                                        sb = GetStringBuilder();
+                                        sb.Append(ch);
+                                        sb.Append(nextch);
+                                    }
+                                    else {
+                                        return CreateTokenAndAdvanceChar(ch);
+                                    }
+                                }
+                                break;
+                            case ':': {
+                                    var nextch = GetNextChar();
+                                    if (nextch == ':') {
+                                        MarkTokenStart();
+                                        AdvanceChar(false);
+                                        AdvanceChar(false);
+                                        return CreateToken(TokenKind.ColonColon, null);
+                                    }
+                                    else {
+                                        return CreateTokenAndAdvanceChar(ch);
+                                    }
+                                }
+                            case '#': {
+                                    var nextch = GetNextChar();
+                                    if (nextch == '[') {
+                                        MarkTokenStart();
+                                        AdvanceChar(false);
+                                        AdvanceChar(false);
+                                        return CreateToken(TokenKind.HashOpenBracket, null);
+                                    }
+                                    else {
+                                        return CreateTokenAndAdvanceChar(ch);
+                                    }
+                                }
+                            default:
+                                if (IsWhitespace(ch)) {
+                                    AdvanceChar(false);
+                                }
+                                else if (IsNewLine(ch)) {
+                                    AdvanceChar(true);
+                                }
+                                else if (IsIdentifierStartCharacter(ch)) {
+                                    state = State.InNormalName;
+                                    MarkTokenStart();
+                                    AdvanceChar(false);
+                                    sb = GetStringBuilder();
+                                    sb.Append(ch);
+                                }
+                                else if (IsDecDigit(ch)) {
+                                    state = State.InNumberInteger;
+                                    MarkTokenStart();
+                                    AdvanceChar(false);
+                                    sb = GetStringBuilder();
+                                    sb.Append(ch);
+                                }
+                                else {
+                                    return CreateTokenAndAdvanceChar(ch);
+                                }
+                                break;
                         }
                         break;
 
-                    case State.InWhitespaceOrNewLine:
-                        if (IsWhitespace(ch) || IsNewLine(ch)) {
-                            AdvanceChar();
-                        }
-                        else {
-                            state = State.None;
-                        }
-                        break;
                     case State.InSingleLineComment:
                         if (IsNewLine(ch) || ch == char.MaxValue) {
                             state = State.None;
                         }
                         else {
-                            AdvanceChar();
+                            AdvanceChar(false);
                         }
                         break;
-                    case State.InMultiLineComment:
+                    case State.InDelimitedComment:
                         if (ch == '*') {
-                            AdvanceChar();
+                            AdvanceChar(false);
                             ch = GetChar();
                             if (ch == '/') {
-                                AdvanceChar();
+                                AdvanceChar(false);
                                 state = State.None;
                             }
                         }
@@ -300,26 +340,26 @@ namespace SData.Internal {
                             ErrorAndThrow("*/ expected.");
                         }
                         else {
-                            AdvanceChar();
+                            AdvanceChar(true);
                         }
                         break;
-                    case State.InNormalIdentifier:
-                    case State.InVerbatimIdentifier:
+                    case State.InNormalName:
+                    case State.InVerbatimName:
                         if (IsIdentifierPartCharacter(ch)) {
                             sb.Append(ch);
-                            AdvanceChar();
+                            AdvanceChar(false);
                         }
                         else {
-                            return CreateToken(state == State.InNormalIdentifier ? TokenKind.NormalName : TokenKind.VerbatimName, sb.ToString());
+                            return CreateToken(state == State.InNormalName ? TokenKind.NormalName : TokenKind.VerbatimName, sb.ToString());
                         }
                         break;
                     case State.InNormalString:
                         if (ch == '\\') {
-                            AdvanceChar();
+                            AdvanceChar(false);
                             ProcessCharEscSeq(sb);
                         }
                         else if (ch == '"') {
-                            AdvanceChar();
+                            AdvanceChar(false);
                             return CreateToken(TokenKind.NormalString, sb.ToString());
                         }
                         else if (IsNewLine(ch) || ch == char.MaxValue) {
@@ -327,16 +367,16 @@ namespace SData.Internal {
                         }
                         else {
                             sb.Append(ch);
-                            AdvanceChar();
+                            AdvanceChar(false);
                         }
                         break;
                     case State.InVerbatimString:
                         if (ch == '"') {
-                            AdvanceChar();
+                            AdvanceChar(false);
                             ch = GetChar();
                             if (ch == '"') {
                                 sb.Append('"');
-                                AdvanceChar();
+                                AdvanceChar(false);
                             }
                             else {
                                 return CreateToken(TokenKind.VerbatimString, sb.ToString());
@@ -347,40 +387,35 @@ namespace SData.Internal {
                         }
                         else {
                             sb.Append(ch);
-                            AdvanceChar();
+                            AdvanceChar(true);
                         }
                         break;
                     case State.InChar:
-                        if (ch == '\\') {
-                            AdvanceChar();
-                            ProcessCharEscSeq(sb);
-                        }
-                        else if (ch == '\'') {
-                            if (sb.Length == 1) {
-                                AdvanceChar();
-                                return CreateToken(TokenKind.Char, sb.ToString());
+                        if (sb.Length == 0) {
+                            if (ch == '\\') {
+                                AdvanceChar(false);
+                                ProcessCharEscSeq(sb);
                             }
-                            else {
+                            else if (ch == '\'' || IsNewLine(ch) || ch == char.MaxValue) {
                                 ErrorAndThrow("Character expected.");
                             }
+                            else {
+                                sb.Append(ch);
+                                AdvanceChar(false);
+                            }
                         }
-                        else if (IsNewLine(ch) || ch == char.MaxValue) {
-                            ErrorAndThrow("' expected.");
+                        else if (ch == '\'') {
+                            AdvanceChar(false);
+                            return CreateToken(TokenKind.Char, sb.ToString());
                         }
                         else {
-                            if (sb.Length == 0) {
-                                sb.Append(ch);
-                                AdvanceChar();
-                            }
-                            else {
-                                ErrorAndThrow("' expected.");
-                            }
+                            ErrorAndThrow("' expected.");
                         }
                         break;
                     case State.InNumberInteger:
                         if (IsDecDigit(ch)) {
                             sb.Append(ch);
-                            AdvanceChar();
+                            AdvanceChar(false);
                         }
                         else if (ch == '.') {
                             var nextch = GetNextChar();
@@ -388,8 +423,8 @@ namespace SData.Internal {
                                 state = State.InNumberFraction;
                                 sb.Append(ch);
                                 sb.Append(nextch);
-                                AdvanceChar();
-                                AdvanceChar();
+                                AdvanceChar(false);
+                                AdvanceChar(false);
                             }
                             else {
                                 return CreateToken(TokenKind.Integer, sb.ToString());
@@ -397,17 +432,17 @@ namespace SData.Internal {
                         }
                         else if (ch == 'E' || ch == 'e') {
                             sb.Append(ch);
-                            AdvanceChar();
+                            AdvanceChar(false);
                             ch = GetChar();
                             if (ch == '+' || ch == '-') {
                                 sb.Append(ch);
-                                AdvanceChar();
+                                AdvanceChar(false);
                                 ch = GetChar();
                             }
                             if (IsDecDigit(ch)) {
                                 state = State.InNumberExponent;
                                 sb.Append(ch);
-                                AdvanceChar();
+                                AdvanceChar(false);
                             }
                             else {
                                 ErrorAndThrow("Decimal digit expected.");
@@ -420,21 +455,21 @@ namespace SData.Internal {
                     case State.InNumberFraction:
                         if (IsDecDigit(ch)) {
                             sb.Append(ch);
-                            AdvanceChar();
+                            AdvanceChar(false);
                         }
                         else if (ch == 'E' || ch == 'e') {
                             sb.Append(ch);
-                            AdvanceChar();
+                            AdvanceChar(false);
                             ch = GetChar();
                             if (ch == '+' || ch == '-') {
                                 sb.Append(ch);
-                                AdvanceChar();
+                                AdvanceChar(false);
                                 ch = GetChar();
                             }
                             if (IsDecDigit(ch)) {
                                 state = State.InNumberExponent;
                                 sb.Append(ch);
-                                AdvanceChar();
+                                AdvanceChar(false);
                             }
                             else {
                                 ErrorAndThrow("Decimal digit expected.");
@@ -447,14 +482,13 @@ namespace SData.Internal {
                     case State.InNumberExponent:
                         if (IsDecDigit(ch)) {
                             sb.Append(ch);
-                            AdvanceChar();
+                            AdvanceChar(false);
                         }
                         else {
                             return CreateToken(TokenKind.Real, sb.ToString());
                         }
                         break;
                     default:
-                        Debug.Assert(false);
                         throw new InvalidOperationException("Invalid stateKind: " + state);
                 }
             }
@@ -463,14 +497,14 @@ namespace SData.Internal {
             var ch = GetChar();
             switch (ch) {
                 case 'u': {
-                        AdvanceChar();
+                    AdvanceChar(false);
                         int value = 0;
                         for (var i = 0; i < 4; ++i) {
                             ch = GetChar();
                             if (IsHexDigit(ch)) {
                                 value <<= 4;
                                 value |= HexValue(ch);
-                                AdvanceChar();
+                                AdvanceChar(false);
                             }
                             else {
                                 ErrorAndThrow("Invalid character escape sequence.");
@@ -492,7 +526,7 @@ namespace SData.Internal {
                 case 'v': sb.Append('\v'); break;
                 default: ErrorAndThrow("Invalid character escape sequence."); break;
             }
-            AdvanceChar();
+            AdvanceChar(false);
         }
 
         #region helpers

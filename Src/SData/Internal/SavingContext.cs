@@ -11,14 +11,14 @@ namespace SData.Internal {
         }
         private readonly List<AliasUri> _aliasUriList;
         private string AddUri(string uri) {
-            var list = _aliasUriList;
-            foreach (var au in list) {
+            var auList = _aliasUriList;
+            foreach (var au in auList) {
                 if (au.Uri == uri) {
                     return au.Alias;
                 }
             }
-            var alias = "a" + list.Count.ToInvString();
-            list.Add(new AliasUri(alias, uri));
+            var alias = "a" + auList.Count.ToInvString();
+            auList.Add(new AliasUri(alias, uri));
             return alias;
         }
         public void AppendFullName(FullName fullName) {
@@ -34,16 +34,16 @@ namespace SData.Internal {
         }
 
         public void InsertAliasUriList() {
-            var list = _aliasUriList;
-            var cnt = list.Count;
-            if (cnt > 0) {
+            var auList = _aliasUriList;
+            var count = auList.Count;
+            if (count > 0) {
                 var sb = StringBuilderBuffer.Acquire();
                 sb.Append('<');
-                for (var i = 0; i < cnt; ++i) {
+                for (var i = 0; i < count; ++i) {
                     if (i > 0) {
                         sb.Append(", ");
                     }
-                    var au = list[i];
+                    var au = auList[i];
                     sb.Append(au.Alias);
                     sb.Append(" = ");
                     sb.Append(au.Uri.ToLiteral());

@@ -52,7 +52,6 @@ namespace SData {
         List = 71,
         Set = 72,
         Map = 73,
-        //ObjectSet = 73,
 
     }
 
@@ -107,7 +106,6 @@ namespace SData {
             : base(kind) {
             ItemOrValueType = itemOrValueType;
             MapKeyType = mapKeyType;
-            //ObjectSetKeySelector = objectSetKeySelector;
             ClrType = clrType;
             var ti = clrType.GetTypeInfo();
             ClrConstructor = ReflectionExtensions.GetParameterlessConstructor(ti);
@@ -116,25 +114,16 @@ namespace SData {
                 ClrContainsKeyMethod = ReflectionExtensions.GetMethodInHierarchy(ti, "ContainsKey");
                 ClrGetEnumeratorMethod = ReflectionExtensions.GetMethodInHierarchy(ti, "GetEnumerator");
             }
-            //else if (kind == TypeKind.ObjectSet) {
-            //    ClrKeySelectorProperty = ReflectionExtensions.GetPropertyInHierarchy(ti, "KeySelector");
-            //}
         }
         public readonly LocalTypeMd ItemOrValueType;
         public readonly GlobalTypeRefMd MapKeyType;//opt
-        //public readonly object ObjectSetKeySelector;//opt
         public readonly Type ClrType;
         public readonly ConstructorInfo ClrConstructor;
         public readonly MethodInfo ClrAddMethod;
         public readonly MethodInfo ClrContainsKeyMethod;//for map
         public readonly MethodInfo ClrGetEnumeratorMethod;//for map
-        //public readonly PropertyInfo ClrKeySelectorProperty;//for object set
         public object CreateInstance() {
-            var obj = ClrConstructor.Invoke(null);
-            //if (Kind == TypeKind.ObjectSet) {
-            //    ClrKeySelectorProperty.SetValue(obj, ObjectSetKeySelector);
-            //}
-            return obj;
+            return ClrConstructor.Invoke(null);
         }
         public void InvokeAdd(object obj, object item) {
             ClrAddMethod.Invoke(obj, new object[] { item });
@@ -158,54 +147,6 @@ namespace SData {
             GlobalType = globalType;
         }
         public readonly GlobalTypeMd GlobalType;
-        //public static GlobalTypeRefMd GetAtom(TypeKind kind) {
-        //    return _atomMap[kind];
-        //}
-        //public static NullableTypeMd GetNullableAtom(TypeKind kind) {
-        //    return _nullableAtomMap[kind];
-        //}
-        //private static readonly Dictionary<TypeKind, GlobalTypeRefMd> _atomMap = new Dictionary<TypeKind, GlobalTypeRefMd> {
-        //    { TypeKind.String, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.String)) },
-        //    { TypeKind.IgnoreCaseString, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.IgnoreCaseString)) },
-        //    { TypeKind.Char, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.Char)) },
-        //    { TypeKind.Decimal, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.Decimal)) },
-        //    { TypeKind.Int64, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.Int64)) },
-        //    { TypeKind.Int32, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.Int32)) },
-        //    { TypeKind.Int16, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.Int16)) },
-        //    { TypeKind.SByte, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.SByte)) },
-        //    { TypeKind.UInt64, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.UInt64)) },
-        //    { TypeKind.UInt32, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.UInt32)) },
-        //    { TypeKind.UInt16, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.UInt16)) },
-        //    { TypeKind.Byte, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.Byte)) },
-        //    { TypeKind.Double, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.Double)) },
-        //    { TypeKind.Single, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.Single)) },
-        //    { TypeKind.Boolean, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.Boolean)) },
-        //    { TypeKind.Binary, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.Binary)) },
-        //    { TypeKind.Guid, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.Guid)) },
-        //    { TypeKind.TimeSpan, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.TimeSpan)) },
-        //    { TypeKind.DateTimeOffset, new GlobalTypeRefMd(AtomTypeMd.Get(TypeKind.DateTimeOffset)) },
-        //};
-        //private static readonly Dictionary<TypeKind, NullableTypeMd> _nullableAtomMap = new Dictionary<TypeKind, NullableTypeMd> {
-        //    { TypeKind.String, new NullableTypeMd(_atomMap[TypeKind.String]) },
-        //    { TypeKind.IgnoreCaseString, new NullableTypeMd(_atomMap[TypeKind.IgnoreCaseString]) },
-        //    { TypeKind.Char, new NullableTypeMd(_atomMap[TypeKind.Char]) },
-        //    { TypeKind.Decimal, new NullableTypeMd(_atomMap[TypeKind.Decimal]) },
-        //    { TypeKind.Int64, new NullableTypeMd(_atomMap[TypeKind.Int64]) },
-        //    { TypeKind.Int32, new NullableTypeMd(_atomMap[TypeKind.Int32]) },
-        //    { TypeKind.Int16, new NullableTypeMd(_atomMap[TypeKind.Int16]) },
-        //    { TypeKind.SByte, new NullableTypeMd(_atomMap[TypeKind.SByte]) },
-        //    { TypeKind.UInt64, new NullableTypeMd(_atomMap[TypeKind.UInt64]) },
-        //    { TypeKind.UInt32, new NullableTypeMd(_atomMap[TypeKind.UInt32]) },
-        //    { TypeKind.UInt16, new NullableTypeMd(_atomMap[TypeKind.UInt16]) },
-        //    { TypeKind.Byte, new NullableTypeMd(_atomMap[TypeKind.Byte]) },
-        //    { TypeKind.Double, new NullableTypeMd(_atomMap[TypeKind.Double]) },
-        //    { TypeKind.Single, new NullableTypeMd(_atomMap[TypeKind.Single]) },
-        //    { TypeKind.Boolean, new NullableTypeMd(_atomMap[TypeKind.Boolean]) },
-        //    { TypeKind.Binary, new NullableTypeMd(_atomMap[TypeKind.Binary]) },
-        //    { TypeKind.Guid, new NullableTypeMd(_atomMap[TypeKind.Guid]) },
-        //    { TypeKind.TimeSpan, new NullableTypeMd(_atomMap[TypeKind.TimeSpan]) },
-        //    { TypeKind.DateTimeOffset, new NullableTypeMd(_atomMap[TypeKind.DateTimeOffset]) },
-        //};
     }
 
     public abstract class GlobalTypeMd : TypeMd {
@@ -272,39 +213,9 @@ namespace SData {
             return null;
         }
     }
-    public sealed class KeyMd {
-        public KeyMd(string[] propertyNames) {
-            _propertyNames = propertyNames;
-        }
-        internal void Resolve(ClassTypeMd clsType) {
-            var propNames = _propertyNames;
-            var count = propNames.Length;
-            var props = new PropertyMd[count];
-            for (var i = 0; i < count; ++i) {
-                var prop = props[i] = clsType._propertyMap[propNames[i]];
-                var propType = prop.Type;
-                if (propType.Kind == TypeKind.Class) {
-                    clsType = propType.NonNullableType.TryGetGlobalType<ClassTypeMd>();
-                }
-            }
-            _properties = props;
-        }
-        private readonly string[] _propertyNames;
-        public IReadOnlyList<string> PropertyNameList {
-            get {
-                return _propertyNames;
-            }
-        }
-        private PropertyMd[] _properties;
-        public IReadOnlyList<PropertyMd> PropertyList {
-            get {
-                return _properties;
-            }
-        }
-    }
     public sealed class ClassTypeMd : GlobalTypeMd {
         public ClassTypeMd(FullName fullName, bool isAbstract, ClassTypeMd baseClass,
-            KeyMd[] keys, Dictionary<string, PropertyMd> thisPropertyMap, Type clrType)
+            KeyMd[] thisKeys, Dictionary<string, PropertyMd> thisPropertyMap, Type clrType)
             : base(TypeKind.Class, fullName) {
             IsAbstract = isAbstract;
             BaseClass = baseClass;
@@ -336,17 +247,17 @@ namespace SData {
                 }
                 _propertyMap = pm;
             }
-            if (keys != null) {
-                foreach (var key in keys) {
+            if (thisKeys != null) {
+                foreach (var key in thisKeys) {
                     key.Resolve(this);
                 }
-                _thisKeys = keys;
+                _thisKeys = thisKeys;
             }
             ClrOnLoadingMethod = ti.GetDeclaredMethod(ReflectionExtensions.OnLoadingNameStr);
             ClrOnLoadedMethod = ti.GetDeclaredMethod(ReflectionExtensions.OnLoadedNameStr);
         }
         public readonly bool IsAbstract;
-        public readonly ClassTypeMd BaseClass;
+        public readonly ClassTypeMd BaseClass;//opt
         private static readonly Dictionary<string, PropertyMd> _emptyPropertyMap = new Dictionary<string, PropertyMd>(0);
         internal readonly Dictionary<string, PropertyMd> _propertyMap;//includes base properties
         public IReadOnlyDictionary<string, PropertyMd> PropertyMap {
@@ -373,8 +284,8 @@ namespace SData {
         public readonly MethodInfo ClrOnLoadingMethod;//opt
         public readonly MethodInfo ClrOnLoadedMethod;//opt
         public bool IsEqualToOrDeriveFrom(ClassTypeMd other) {
-            for (var cls = this; cls != null; cls = cls.BaseClass) {
-                if (cls == other) {
+            for (var md = this; md != null; md = md.BaseClass) {
+                if (md == other) {
                     return true;
                 }
             }
@@ -455,6 +366,37 @@ namespace SData {
             }
         }
     }
-
+    public sealed class KeyMd {
+        public KeyMd(string[] propertyNames) {
+            _propertyNames = propertyNames;
+        }
+        internal void Resolve(ClassTypeMd classType) {
+            ClassType = classType;
+            var propNames = _propertyNames;
+            var count = propNames.Length;
+            var props = new PropertyMd[count];
+            for (var i = 0; i < count; ++i) {
+                props[i] = classType._propertyMap[propNames[i]];
+                var propType = props[i].Type;
+                if (propType.Kind == TypeKind.Class) {
+                    classType = propType.NonNullableType.TryGetGlobalType<ClassTypeMd>();
+                }
+            }
+            _properties = props;
+        }
+        private readonly string[] _propertyNames;
+        public IReadOnlyList<string> PropertyNameList {
+            get {
+                return _propertyNames;
+            }
+        }
+        private PropertyMd[] _properties;
+        public IReadOnlyList<PropertyMd> PropertyList {
+            get {
+                return _properties;
+            }
+        }
+        public ClassTypeMd ClassType { get; private set; }
+    }
 
 }

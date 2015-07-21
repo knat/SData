@@ -3,13 +3,18 @@
 namespace SData {
     public class UntypedObject {
         public UntypedObject() { }
-        public UntypedObject(FullName? classFullName, Dictionary<string, object> properties) {
+        public UntypedObject(FullName classFullName, Dictionary<string, object> properties) {
             ClassFullName = classFullName;
             Properties = properties;
         }
-        public FullName? ClassFullName { get; set; }
+        public UntypedObject(Dictionary<string, object> properties)
+            : this(default(FullName), properties) {
+        }
+        public FullName ClassFullName { get; set; }
+        public bool HasClassFullName {
+            get { return ClassFullName.IsValid; }
+        }
         public Dictionary<string, object> Properties { get; set; }
-        //public TextSpan __TextSpan { get; set; }
     }
     public class UntypedEnumValue {
         public UntypedEnumValue() { }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.Text;
-using SData.Internal;
 using System.Collections.Generic;
 
 namespace SData.Internal {
@@ -181,7 +180,6 @@ namespace SData.Internal {
             return value.ToString(_dtoFormatString, DateTimeFormatInfo.InvariantInfo);
         }
         //
-
         //
         //
         public static void GetLiteral(string value, StringBuilder sb) {
@@ -213,8 +211,9 @@ namespace SData.Internal {
             sb.Append(((int)value).ToString("X4", CultureInfo.InvariantCulture));
             sb.Append('\'');
         }
-
-        private static readonly Dictionary<Type, TypeKind> _typeKindMap = new Dictionary<Type, TypeKind> {
+        //
+        //
+        private static readonly Dictionary<Type, TypeKind> _clrTypeKindMap = new Dictionary<Type, TypeKind> {
                 { typeof(string), TypeKind.String },
                 { typeof(IgnoreCaseString), TypeKind.IgnoreCaseString },
                 { typeof(char), TypeKind.Char },
@@ -237,7 +236,7 @@ namespace SData.Internal {
             };
         public static TypeKind GetTypeKind(object value) {
             TypeKind kind;
-            if (_typeKindMap.TryGetValue(value.GetType(), out kind)) {
+            if (_clrTypeKindMap.TryGetValue(value.GetType(), out kind)) {
                 return kind;
             }
             return TypeKind.None;
