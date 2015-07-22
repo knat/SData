@@ -12,7 +12,7 @@ namespace SData {
             if (value == null) return null;
             return new IgnoreCaseString(value);
         }
-        public static implicit operator string(IgnoreCaseString obj) {
+        public static implicit operator string (IgnoreCaseString obj) {
             if ((object)obj == null) return null;
             return obj._value;
         }

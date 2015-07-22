@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 
-namespace SData.Internal
-{
-
+namespace SData.Internal {
     public sealed class SavingContext : IndentedStringBuilder {
         public SavingContext(StringBuilder stringBuilder, string indentString, string newLineString)
             : base(stringBuilder, indentString, newLineString) {

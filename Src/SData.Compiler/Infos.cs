@@ -379,7 +379,7 @@ namespace SData.Compiler {
                     var kind = i.Kind;
                     return kind == SymbolKind.Property || kind == SymbolKind.Field;
                 }).ToList();
-                for (var i = 0; i < memberSymbolList.Count; ) {
+                for (var i = 0; i < memberSymbolList.Count;) {
                     var memberSymbol = memberSymbolList[i];
                     var propAttData = memberSymbol.GetAttributeData(CSEX.SchemaPropertyAttributeNameParts);
                     if (propAttData != null) {
@@ -478,7 +478,7 @@ namespace SData.Compiler {
                 //>public void Save(TextWriter writer, string indentString = "\t", string newLineString = "\n") {
                 //>  SData.Serializer.Save(this, __Metadata, writer, indentString, newLineString);
                 //>}
-                memberList.Add(CS.Method(CS.PublicTokenList, CS.VoidType, "Save", new[] { 
+                memberList.Add(CS.Method(CS.PublicTokenList, CS.VoidType, "Save", new[] {
                         CS.Parameter(CS.TextWriterName, "writer"),
                         CS.Parameter(CS.StringType, "indentString", CS.Literal("\t")),
                         CS.Parameter(CS.StringType, "newLineString", CS.Literal("\n"))
@@ -489,7 +489,7 @@ namespace SData.Compiler {
                 //>public void Save(StringBuilder stringBuilder, string indentString = "\t", string newLineString = "\n") {
                 //>  SData.Serializer.Save(this, __Metadata, stringBuilder, indentString, newLineString);
                 //>}
-                memberList.Add(CS.Method(CS.PublicTokenList, CS.VoidType, "Save", new[] { 
+                memberList.Add(CS.Method(CS.PublicTokenList, CS.VoidType, "Save", new[] {
                         CS.Parameter(CS.StringBuilderName, "stringBuilder"),
                         CS.Parameter(CS.StringType, "indentString", CS.Literal("\t")),
                         CS.Parameter(CS.StringType, "newLineString", CS.Literal("\n"))
@@ -513,7 +513,7 @@ namespace SData.Compiler {
             //>}
             memberList.Add(CS.Property(baseClass == null ? CS.PublicVirtualTokenList : CS.PublicOverrideTokenList,
                 CSEX.ClassTypeMdName, ReflectionExtensions.MetadataNameStr, true, default(SyntaxTokenList),
-                new StatementSyntax[] { 
+                new StatementSyntax[] {
                     CS.ReturnStm(CS.IdName(ReflectionExtensions.ThisMetadataNameStr))
                 }));
             TypeSyntax itfType = null;

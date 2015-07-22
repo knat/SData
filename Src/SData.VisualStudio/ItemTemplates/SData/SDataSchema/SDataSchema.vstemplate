@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+    <TemplateData>
+        <Name>SData Schema</Name>
+        <Description>SData Schema</Description>
+        <TemplateID>SDataSchema</TemplateID>
+        <ProjectType>CSharp</ProjectType>
+        <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
+        <DefaultName>Schema.sds</DefaultName>
+        <AppliesTo>CSharp + MultiTarget</AppliesTo>
+    </TemplateData>
+    <TemplateContent>
+        <ProjectItem ReplaceParameters="false" ItemType="SDataSchema" TargetFileName="$fileinputname$.sds">SDataSchema.sds</ProjectItem>
+        <ProjectItem ReplaceParameters="false" TargetFileName="__SDataGenerated.cs">__SDataGenerated.cs</ProjectItem>
+    </TemplateContent>
+</VSTemplate>

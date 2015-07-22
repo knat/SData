@@ -255,7 +255,8 @@ namespace SData {
                 case TypeKind.Byte:
                     sb.Append(((byte)value).ToInvString());
                     break;
-                case TypeKind.Double: {
+                case TypeKind.Double:
+                    {
                         bool isLiteral;
                         var s = ((double)value).ToInvString(out isLiteral);
                         if (isLiteral) {
@@ -266,7 +267,8 @@ namespace SData {
                         }
                     }
                     break;
-                case TypeKind.Single: {
+                case TypeKind.Single:
+                    {
                         bool isLiteral;
                         var s = ((float)value).ToInvString(out isLiteral);
                         if (isLiteral) {

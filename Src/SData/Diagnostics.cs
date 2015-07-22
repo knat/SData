@@ -1,8 +1,7 @@
 ﻿using System.Runtime.Serialization;
 using SData.Internal;
 
-namespace SData
-{
+namespace SData {
     public enum DiagnosticSeverity : byte {
         None = 0,
         Error = 1,

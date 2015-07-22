@@ -162,7 +162,8 @@ namespace SData.Internal {
                         switch (ch) {
                             case char.MaxValue:
                                 return CreateTokenAndAdvanceChar(ch);
-                            case '/': {
+                            case '/':
+                                {
                                     var nextch = GetNextChar();
                                     if (nextch == '/') {
                                         state = State.InSingleLineComment;
@@ -181,7 +182,8 @@ namespace SData.Internal {
                                     }
                                 }
                                 break;
-                            case '@': {
+                            case '@':
+                                {
                                     var nextch = GetNextChar();
                                     if (nextch == '"') {
                                         state = State.InVerbatimString;
@@ -203,14 +205,16 @@ namespace SData.Internal {
                                     }
                                 }
                                 break;
-                            case '"': {
+                            case '"':
+                                {
                                     state = State.InNormalString;
                                     MarkTokenStart();
                                     AdvanceChar(false);
                                     sb = GetStringBuilder();
                                 }
                                 break;
-                            case '\'': {
+                            case '\'':
+                                {
                                     state = State.InChar;
                                     MarkTokenStart();
                                     AdvanceChar(false);
@@ -218,7 +222,8 @@ namespace SData.Internal {
                                 }
                                 break;
                             case '-':
-                            case '+': {
+                            case '+':
+                                {
                                     var nextch = GetNextChar();
                                     if (IsDecDigit(nextch)) {
                                         state = State.InNumberInteger;
@@ -251,7 +256,8 @@ namespace SData.Internal {
                                     }
                                 }
                                 break;
-                            case '.': {
+                            case '.':
+                                {
                                     var nextch = GetNextChar();
                                     if (IsDecDigit(nextch)) {
                                         state = State.InNumberFraction;
@@ -267,7 +273,8 @@ namespace SData.Internal {
                                     }
                                 }
                                 break;
-                            case ':': {
+                            case ':':
+                                {
                                     var nextch = GetNextChar();
                                     if (nextch == ':') {
                                         MarkTokenStart();
@@ -279,7 +286,8 @@ namespace SData.Internal {
                                         return CreateTokenAndAdvanceChar(ch);
                                     }
                                 }
-                            case '#': {
+                            case '#':
+                                {
                                     var nextch = GetNextChar();
                                     if (nextch == '[') {
                                         MarkTokenStart();
@@ -496,8 +504,9 @@ namespace SData.Internal {
         private void ProcessCharEscSeq(StringBuilder sb) {
             var ch = GetChar();
             switch (ch) {
-                case 'u': {
-                    AdvanceChar(false);
+                case 'u':
+                    {
+                        AdvanceChar(false);
                         int value = 0;
                         for (var i = 0; i < 4; ++i) {
                             ch = GetChar();

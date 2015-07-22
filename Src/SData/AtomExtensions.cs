@@ -9,119 +9,136 @@ namespace SData {
                     return s;
                 case TypeKind.IgnoreCaseString:
                     return new IgnoreCaseString(s, isReadOnly);
-                case TypeKind.Char: {
+                case TypeKind.Char:
+                    {
                         char r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.Decimal: {
+                case TypeKind.Decimal:
+                    {
                         decimal r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.Int64: {
+                case TypeKind.Int64:
+                    {
                         long r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.Int32: {
+                case TypeKind.Int32:
+                    {
                         int r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.Int16: {
+                case TypeKind.Int16:
+                    {
                         short r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.SByte: {
+                case TypeKind.SByte:
+                    {
                         sbyte r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.UInt64: {
+                case TypeKind.UInt64:
+                    {
                         ulong r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.UInt32: {
+                case TypeKind.UInt32:
+                    {
                         uint r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.UInt16: {
+                case TypeKind.UInt16:
+                    {
                         ushort r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.Byte: {
+                case TypeKind.Byte:
+                    {
                         byte r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.Double: {
+                case TypeKind.Double:
+                    {
                         double r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.Single: {
+                case TypeKind.Single:
+                    {
                         float r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.Boolean: {
+                case TypeKind.Boolean:
+                    {
                         bool r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.Binary: {
+                case TypeKind.Binary:
+                    {
                         Binary r;
                         if (Binary.TryFromBase64String(s, out r, isReadOnly)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.Guid: {
+                case TypeKind.Guid:
+                    {
                         Guid r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.TimeSpan: {
+                case TypeKind.TimeSpan:
+                    {
                         TimeSpan r;
                         if (s.TryInvParse(out r)) {
                             return r;
                         }
                     }
                     break;
-                case TypeKind.DateTimeOffset: {
+                case TypeKind.DateTimeOffset:
+                    {
                         DateTimeOffset r;
                         if (s.TryInvParse(out r)) {
                             return r;
@@ -160,11 +177,13 @@ namespace SData {
                     return ((ushort)value).ToInvString();
                 case TypeKind.Byte:
                     return ((byte)value).ToInvString();
-                case TypeKind.Double: {
+                case TypeKind.Double:
+                    {
                         bool isLiteral;
                         return ((double)value).ToInvString(out isLiteral);
                     }
-                case TypeKind.Single: {
+                case TypeKind.Single:
+                    {
                         bool isLiteral;
                         return ((float)value).ToInvString(out isLiteral);
                     }

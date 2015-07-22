@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup>
+        <AvailableItemName Include="SDataSchema" />
+    </ItemGroup>
+    <PropertyGroup>
+        <CompileDependsOn>
+            SDataBuild;
+            $(CompileDependsOn)
+        </CompileDependsOn>
+    </PropertyGroup>
+    <UsingTask TaskName="SData.MSBuild.SDataTask" AssemblyFile="$(MSBuildThisFileDirectory)SData.MSBuild.dll" />
+    <Target Name="SDataBuild">
+        <Message Text="======== Begin SData Build ========" Importance="high" />
+        <SDataTask
+            ProjectDirectory="$(MSBuildProjectDirectory)"
+            SchemaFileList="@(SDataSchema)"
+            CSFileList="@(Compile)"
+            CSPpList="$(DefineConstants)"
+            CSRefList="@(ReferencePath)"
+            AssemblyName="$(AssemblyName)"
+            >
+        </SDataTask>
+        <Message Text="======== End SData Build ========" Importance="high" />
+    </Target>
+</Project>

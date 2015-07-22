@@ -6,8 +6,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SData.Internal;
 
-namespace SData.Compiler
-{
+namespace SData.Compiler {
     internal static class CSEX {
         internal static readonly string[] SchemaNamespaceAttributeNameParts = new string[] { "SchemaNamespaceAttribute", "SData" };
         internal static readonly string[] __CompilerSchemaNamespaceAttributeNameParts = new string[] { "__CompilerSchemaNamespaceAttribute", "SData" };
@@ -100,7 +99,7 @@ namespace SData.Compiler
                 foreach (var nsInfo in nsInfoMap.Values) {
                     if (nsSymbol.FullNameEquals(nsInfo.DottedName.NameParts)) {
                         var typeSymbolList = nsSymbol.GetMembers().OfType<INamedTypeSymbol>().Where(i => i.TypeKind == Microsoft.CodeAnalysis.TypeKind.Class).ToList();
-                        for (var i = 0; i < typeSymbolList.Count; ) {
+                        for (var i = 0; i < typeSymbolList.Count;) {
                             var typeSymbol = typeSymbolList[i];
                             var clsAttData = typeSymbol.GetAttributeData(SchemaClassAttributeNameParts);
                             if (clsAttData != null) {
