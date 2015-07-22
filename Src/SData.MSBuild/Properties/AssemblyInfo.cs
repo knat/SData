@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SData.Compiler")]
+[assembly: AssemblyTitle("SData.MSBuild")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("SData.Compiler")]
+[assembly: AssemblyProduct("SData.MSBuild")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("7941ca32-b366-49ae-93d8-ee96691a50eb")]
+[assembly: Guid("d7bc9675-7d08-4683-9969-c02c73d1bf20")]
 
 // Version information for an assembly consists of the following four values:
 //

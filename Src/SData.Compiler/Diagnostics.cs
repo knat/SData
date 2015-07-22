@@ -1,5 +1,4 @@
 ﻿using System;
-using SData.Internal;
 
 namespace SData.Compiler {
     internal enum DiagCodeEx {
@@ -179,6 +178,6 @@ namespace SData.Compiler {
         }
     }
 
-    
+
 
 }

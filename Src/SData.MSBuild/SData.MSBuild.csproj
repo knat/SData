@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{7941CA32-B366-49AE-93D8-EE96691A50EB}</ProjectGuid>
+    <ProjectGuid>{D7BC9675-7D08-4683-9969-C02C73D1BF20}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SData.Compiler</RootNamespace>
-    <AssemblyName>SData.Compiler</AssemblyName>
+    <RootNamespace>SData.MSBuild</RootNamespace>
+    <AssemblyName>SData.MSBuild</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -51,27 +51,21 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Compiler.cs" />
-    <Compile Include="CompilerContext.cs" />
-    <Compile Include="CS.cs" />
-    <Compile Include="CSDottedName.cs" />
-    <Compile Include="CSEX.cs" />
-    <Compile Include="Diagnostics.cs" />
-    <Compile Include="Infos.cs" />
-    <Compile Include="Nodes.cs" />
-    <Compile Include="Parser.cs" />
+    <Compile Include="Class1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.Analyzers.1.0.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll" />
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.Analyzers.1.0.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.Analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SData.Compiler\SData.Compiler.csproj">
+      <Project>{7941ca32-b366-49ae-93d8-ee96691a50eb}</Project>
+      <Name>SData.Compiler</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SData\SData.csproj">
       <Project>{eb2480c4-a4fc-402e-b68d-0486d1e4d9dd}</Project>
       <Name>SData</Name>

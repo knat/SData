@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using SData.Internal;
+﻿using System.Collections.Generic;
 
 namespace SData {
     public class LoadingContext {
@@ -34,30 +32,30 @@ namespace SData {
             }
             return false;
         }
-        public struct Marker {
-            internal Marker(LoadingContext context) {
-                Context = context;
-                StartIndex = context.DiagnosticList.Count;
-            }
-            public readonly LoadingContext Context;
-            public readonly int StartIndex;
-            public int Count {
-                get {
-                    return Context.DiagnosticList.Count - StartIndex;
-                }
-            }
-            public bool HasErrorDiagnostics {
-                get {
-                    return Context.HasErrorDiagnosticsCore(StartIndex);
-                }
-            }
-            public void Restore() {
-                Context.DiagnosticList.RemoveRange(StartIndex, Context.DiagnosticList.Count - StartIndex);
-            }
-        }
-        public Marker Mark() {
-            return new Marker(this);
-        }
+        //public struct Marker {
+        //    internal Marker(LoadingContext context) {
+        //        Context = context;
+        //        StartIndex = context.DiagnosticList.Count;
+        //    }
+        //    public readonly LoadingContext Context;
+        //    public readonly int StartIndex;
+        //    public int Count {
+        //        get {
+        //            return Context.DiagnosticList.Count - StartIndex;
+        //        }
+        //    }
+        //    public bool HasErrorDiagnostics {
+        //        get {
+        //            return Context.HasErrorDiagnosticsCore(StartIndex);
+        //        }
+        //    }
+        //    public void Restore() {
+        //        Context.DiagnosticList.RemoveRange(StartIndex, Context.DiagnosticList.Count - StartIndex);
+        //    }
+        //}
+        //public Marker Mark() {
+        //    return new Marker(this);
+        //}
 
     }
 
