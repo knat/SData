@@ -78,7 +78,7 @@ namespace SData.Internal {
                             }
                         }
                         TokenExpected('=');
-                        auList.Add(new AliasUri(StringExpected().Value, alias));
+                        auList.Add(new AliasUri(alias, StringExpected().Value));
                         if (!Token(',')) {
                             break;
                         }
@@ -115,17 +115,21 @@ namespace SData.Internal {
                     }
                 }
             }
-            textSpan = default(TextSpan);
+            else {
+                textSpan = default(TextSpan);
+            }
             Token openBraceToken;
-            if (!Token('{', out openBraceToken)) {
+            if (Token('{', out openBraceToken)) {
+                if (!hasTypeIndicator) {
+                    textSpan = openBraceToken.TextSpan;
+                }
+            }
+            else {
                 if (hasAliasUriList || hasTypeIndicator) {
                     ErrorAndThrow("{ expected.");
                 }
                 result = null;
                 return false;
-            }
-            if (!hasTypeIndicator) {
-                textSpan = openBraceToken.TextSpan;
             }
             if (declaredClsMd != null) {
                 if (!hasTypeIndicator) {

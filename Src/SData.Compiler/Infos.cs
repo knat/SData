@@ -476,7 +476,7 @@ namespace SData.Compiler {
                     CS.Argument(CS.IdName(ReflectionExtensions.ThisMetadataNameStr)), CS.OutArgument("result")))));
             if (baseClass == null) {
                 //>public void Save(TextWriter writer, string indentString = "\t", string newLineString = "\n") {
-                //>  SData.Serializer.Save(this, __Metadata, writer, indentString, newLineString);
+                //>  SData.Serializer.Save(this, __ThisMetadata, writer, indentString, newLineString);
                 //>}
                 memberList.Add(CS.Method(CS.PublicTokenList, CS.VoidType, "Save", new[] {
                         CS.Parameter(CS.TextWriterName, "writer"),
@@ -484,10 +484,10 @@ namespace SData.Compiler {
                         CS.Parameter(CS.StringType, "newLineString", CS.Literal("\n"))
                     },
                     CS.ExprStm(CS.InvoExpr(CS.MemberAccessExpr(CSEX.SerializerExpr, "Save"), CS.ThisExpr(),
-                        CS.IdName(ReflectionExtensions.MetadataNameStr), CS.IdName("writer"), CS.IdName("indentString"), CS.IdName("newLineString")
+                        CS.IdName(ReflectionExtensions.ThisMetadataNameStr), CS.IdName("writer"), CS.IdName("indentString"), CS.IdName("newLineString")
                     ))));
                 //>public void Save(StringBuilder stringBuilder, string indentString = "\t", string newLineString = "\n") {
-                //>  SData.Serializer.Save(this, __Metadata, stringBuilder, indentString, newLineString);
+                //>  SData.Serializer.Save(this, __ThisMetadata, stringBuilder, indentString, newLineString);
                 //>}
                 memberList.Add(CS.Method(CS.PublicTokenList, CS.VoidType, "Save", new[] {
                         CS.Parameter(CS.StringBuilderName, "stringBuilder"),
@@ -495,7 +495,7 @@ namespace SData.Compiler {
                         CS.Parameter(CS.StringType, "newLineString", CS.Literal("\n"))
                     },
                     CS.ExprStm(CS.InvoExpr(CS.MemberAccessExpr(CSEX.SerializerExpr, "Save"), CS.ThisExpr(),
-                        CS.IdName(ReflectionExtensions.MetadataNameStr), CS.IdName("stringBuilder"), CS.IdName("indentString"), CS.IdName("newLineString")
+                        CS.IdName(ReflectionExtensions.ThisMetadataNameStr), CS.IdName("stringBuilder"), CS.IdName("indentString"), CS.IdName("newLineString")
                     ))));
             }
             #region key

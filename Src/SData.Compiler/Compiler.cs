@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SData.Internal;
 
 namespace SData.Compiler {
-    public static class CDataCompiler {
+    public static class SDataCompiler {
         private const string GeneratedFileBanner = @"//
 //Auto-generated, DO NOT EDIT.
 //Visit https://github.com/knat/SData for more information.

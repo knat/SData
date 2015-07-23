@@ -11,7 +11,7 @@ namespace SData {
 
     public enum DiagnosticCode {
         None = 0,
-        Parsing = -200,
+        Parsing = -300,
         DuplicateUriAlias,
         InvalidUriReference,
         InvalidClassReference,

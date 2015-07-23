@@ -6,21 +6,22 @@ using Microsoft.Build.Utilities;
 using System.Runtime.Serialization;
 using Microsoft.CodeAnalysis;
 using System.Collections.Immutable;
+using SData.Compiler;
 
 namespace SData.MSBuild {
     public sealed class SDataTask : Task {
         [Required]
         public string ProjectDirectory { get; set; }
         [Required]
-        public ITaskItem[] SchemaFileList { get; set; }
+        public ITaskItem[] SchemaFiles { get; set; }
         [Required]
-        public ITaskItem[] CSFileList { get; set; }
+        public ITaskItem[] CSFiles { get; set; }
         [Required]
-        public string CSPpList { get; set; }
+        public string CSPpString { get; set; }
         [Required]
-        public ITaskItem[] CSRefList { get; set; }
+        public ITaskItem[] CSRefs { get; set; }
         [Required]
-        public string AssemblyName { get; set; }
+        public string CSAssemblyName { get; set; }
         //
         private const string _genedFileName = "__SDataGenerated.cs";
         private static readonly char[] _csPpSeparators = new char[] { ';', ',' };
@@ -28,33 +29,37 @@ namespace SData.MSBuild {
 
         public override bool Execute() {
             try {
-                List<string> schemaFileList = new List<string>();
-                List<string> csFileList = new List<string>();
-                List<string> csPpList = new List<string>();
-                List<MetadataReference> csRefList = new List<MetadataReference>();
-                if (SchemaFileList != null) {
-                    foreach (var item in SchemaFileList) {
+                var schemaFiles = SchemaFiles;
+                if (schemaFiles.Length == 0) {
+                    return true;
+                }
+                var schemaFileList = new List<string>();
+                var csFileList = new List<string>();
+                var csPpList = new List<string>();
+                var csRefList = new List<MetadataReference>();
+                if (SchemaFiles != null) {
+                    foreach (var item in schemaFiles) {
                         schemaFileList.Add(item.GetMetadata("FullPath"));
                     }
                 }
-                if (CSFileList != null) {
-                    foreach (var item in CSFileList) {
+                if (CSFiles != null) {
+                    foreach (var item in CSFiles) {
                         var path = item.GetMetadata("FullPath");
                         if (!path.EndsWith(_genedFileName, StringComparison.OrdinalIgnoreCase)) {
                             csFileList.Add(path);
                         }
                     }
                 }
-                if (CSPpList != null) {
-                    foreach (var s in CSPpList.Split(_csPpSeparators, StringSplitOptions.RemoveEmptyEntries)) {
+                if (CSPpString != null) {
+                    foreach (var s in CSPpString.Split(_csPpSeparators, StringSplitOptions.RemoveEmptyEntries)) {
                         var s2 = s.Trim();
                         if (s2.Length > 0) {
                             csPpList.Add(s2);
                         }
                     }
                 }
-                if (CSRefList != null) {
-                    foreach (var item in CSRefList) {
+                if (CSRefs != null) {
+                    foreach (var item in CSRefs) {
                         var path = item.ItemSpec;
                         var aliasesStr = item.GetMetadata("Aliases");
                         var aliasArray = default(ImmutableArray<string>);
@@ -80,7 +85,7 @@ namespace SData.MSBuild {
                 //
                 LoadingContext context;
                 string code;
-                var res = SData.Compiler.CDataCompiler.Compile(schemaFileList, csFileList, csPpList, csRefList, AssemblyName, out context, out code);
+                var res = SDataCompiler.Compile(schemaFileList, csFileList, csPpList, csRefList, CSAssemblyName, out context, out code);
                 var diagStore = new DiagStore();
                 if (context != null) {
                     foreach (var diag in context.DiagnosticList) {

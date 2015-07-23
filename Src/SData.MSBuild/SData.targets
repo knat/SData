@@ -3,24 +3,29 @@
     <ItemGroup>
         <AvailableItemName Include="SDataSchema" />
     </ItemGroup>
+
     <PropertyGroup>
-        <CompileDependsOn>
-            SDataBuild;
-            $(CompileDependsOn)
-        </CompileDependsOn>
+        <CoreCompileDependsOn>
+            $(CoreCompileDependsOn);
+            SDataBuild
+        </CoreCompileDependsOn>
     </PropertyGroup>
+
     <UsingTask TaskName="SData.MSBuild.SDataTask" AssemblyFile="$(MSBuildThisFileDirectory)SData.MSBuild.dll" />
-    <Target Name="SDataBuild">
+
+    <Target Name="SDataBuild"
+        >
         <Message Text="======== Begin SData Build ========" Importance="high" />
         <SDataTask
             ProjectDirectory="$(MSBuildProjectDirectory)"
-            SchemaFileList="@(SDataSchema)"
-            CSFileList="@(Compile)"
-            CSPpList="$(DefineConstants)"
-            CSRefList="@(ReferencePath)"
-            AssemblyName="$(AssemblyName)"
+            SchemaFiles="@(SDataSchema)"
+            CSFiles="@(Compile)"
+            CSPpString="$(DefineConstants)"
+            CSRefs="@(ReferencePath)"
+            CSAssemblyName="$(AssemblyName)"
             >
         </SDataTask>
         <Message Text="======== End SData Build ========" Importance="high" />
     </Target>
+
 </Project>

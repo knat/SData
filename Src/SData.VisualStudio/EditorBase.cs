@@ -413,7 +413,7 @@ namespace SData.VisualStudio.Editors {
                 }
             }
         }
-        private const string _taggerKey = "XDataTagger";
+        private const string _taggerKey = "SDataTagger";
         public ITagger<T> CreateTagger<T>(ITextBuffer textBuffer) where T : ITag {
             LanguageErrorTagger tagger;
             var props = textBuffer.Properties;
