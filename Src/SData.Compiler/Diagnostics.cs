@@ -3,7 +3,7 @@
 namespace SData.Compiler {
     internal enum DiagCodeEx {
         None = 0,
-        InternalCompilerError = -2000,
+        InternalCompilerError = -900,
         //
         AliasSysReserved,
         UriSystemReserved,
@@ -170,7 +170,7 @@ namespace SData.Compiler {
                 case DiagCodeEx.InvalidSchemaPropertyType:
                     return "Invalid schema property/field{0} type. {1} expected.".InvFormat(_msgArgs);
                 case DiagCodeEx.InvalidSchemaPropertyTypeOrExplicitTypeExpected:
-                    return "Invalid schema property/field{0} type. {1} expected, or you should declare the C# partial class explicitly.".InvFormat(_msgArgs);
+                    return "Invalid schema property/field{0} type. {1} expected, or you should declare that C# partial class explicitly.".InvFormat(_msgArgs);
 
                 default:
                     throw new InvalidOperationException("Invalid code: " + Code.ToString());

@@ -326,8 +326,8 @@ namespace SData.Compiler {
                     }
                     keyList.Add(key);
                 }
+                KeyList = keyList;
             }
-            KeyList = keyList;
         }
         public readonly bool IsAbstract;
         public readonly bool IsSealed;
@@ -498,24 +498,7 @@ namespace SData.Compiler {
                         CS.IdName(ReflectionExtensions.MetadataNameStr), CS.IdName("stringBuilder"), CS.IdName("indentString"), CS.IdName("newLineString")
                     ))));
             }
-            //>new public static readonly ClassTypeMd __ThisMetadata =
-            //>  new ClassTypeMd(FullName fullName, bool isAbstract, ClassTypeMd baseClass, Dictionary<string, PropertyMd> thisPropertyMap, Type clrType);
-            memberList.Add(CS.Field(baseClass == null ? CS.PublicStaticReadOnlyTokenList : CS.NewPublicStaticReadOnlyTokenList,
-                CSEX.ClassTypeMdName, ReflectionExtensions.ThisMetadataNameStr,
-                CS.NewObjExpr(CSEX.ClassTypeMdName, CSEX.Literal(FullName), CS.Literal(IsAbstract),
-                    baseClass == null ? CS.NullLiteral : baseClass.MetadataRefSyntax,
-                    CS.NewObjWithCollInitOrNullExpr(CS.DictionaryOf(CS.StringType, CSEX.PropertyMdArrayType),
-                        propMap.Values.Select(i => new ExpressionSyntax[] { CS.Literal(i.Name), i.GetMetadataSyntax() })),
-                    CS.TypeOfExpr(FullNameSyntax)
-                )));
-            //>public virtual/override ClassTypeMd __Metadata {
-            //>    get { return __ThisMetadata; }
-            //>}
-            memberList.Add(CS.Property(baseClass == null ? CS.PublicVirtualTokenList : CS.PublicOverrideTokenList,
-                CSEX.ClassTypeMdName, ReflectionExtensions.MetadataNameStr, true, default(SyntaxTokenList),
-                new StatementSyntax[] {
-                    CS.ReturnStm(CS.IdName(ReflectionExtensions.ThisMetadataNameStr))
-                }));
+            #region key
             TypeSyntax itfType = null;
             var keyList = KeyList;
             if (keyList != null) {
@@ -535,7 +518,7 @@ namespace SData.Compiler {
                         retExpr = CS.LogicalAndExpr(retExpr, expr);
                     }
                 }
-                memberList.Add(CS.Method(CS.PublicTokenList, CS.VoidType, "Equals", new[] { CS.Parameter(FullNameSyntax, "other") },
+                memberList.Add(CS.Method(CS.PublicTokenList, CS.BoolType, "Equals", new[] { CS.Parameter(FullNameSyntax, "other") },
                     CS.IfStm(CS.EqualsExpr(CS.CastExpr(CS.ObjectType, CS.ThisExpr()), CS.CastExpr(CS.ObjectType, CS.IdName("other"))),
                         CS.ReturnStm(CS.TrueLiteral)),
                     CS.IfStm(CS.EqualsExpr(CS.CastExpr(CS.ObjectType, CS.IdName("other")), CS.NullLiteral),
@@ -597,6 +580,28 @@ namespace SData.Compiler {
             else {
                 baseList = null;
             }
+            #endregion
+            //>new public static readonly ClassTypeMd __ThisMetadata =
+            //>  new ClassTypeMd(FullName fullName, bool isAbstract, ClassTypeMd baseClass, KeyMd[] thisKeys, Dictionary<string, PropertyMd> thisPropertyMap, Type clrType);
+            memberList.Add(CS.Field(baseClass == null ? CS.PublicStaticReadOnlyTokenList : CS.NewPublicStaticReadOnlyTokenList,
+                CSEX.ClassTypeMdName, ReflectionExtensions.ThisMetadataNameStr,
+                CS.NewObjExpr(CSEX.ClassTypeMdName, CSEX.Literal(FullName), CS.Literal(IsAbstract),
+                    baseClass == null ? CS.NullLiteral : baseClass.MetadataRefSyntax,
+                    keyList == null ? CS.NullLiteral : CS.NewArrOrNullExpr(CSEX.KeyMdArrayType,
+                        keyList.Select(key => CS.NewObjExpr(CSEX.KeyMdName, CS.NewArrExpr(CS.StringArrayType, key.Select(p => CS.Literal(p.Name)))))),
+                    CS.NewObjWithCollInitOrNullExpr(CS.DictionaryOf(CS.StringType, CSEX.PropertyMdName),
+                        propMap.Values.Select(i => new ExpressionSyntax[] { CS.Literal(i.Name), i.GetMetadataSyntax() })),
+                    CS.TypeOfExpr(FullNameSyntax)
+                )));
+            //>public virtual/override ClassTypeMd __Metadata {
+            //>    get { return __ThisMetadata; }
+            //>}
+            memberList.Add(CS.Property(baseClass == null ? CS.PublicVirtualTokenList : CS.PublicOverrideTokenList,
+                CSEX.ClassTypeMdName, ReflectionExtensions.MetadataNameStr, true, default(SyntaxTokenList),
+                new StatementSyntax[] {
+                    CS.ReturnStm(CS.IdName(ReflectionExtensions.ThisMetadataNameStr))
+                }));
+
             parentList.Add(SyntaxFactory.ClassDeclaration(
                 attributeLists: default(SyntaxList<AttributeListSyntax>),
                 modifiers: IsAbstract ? CS.PublicAbstractPartialTokenList : CS.PublicPartialTokenList,

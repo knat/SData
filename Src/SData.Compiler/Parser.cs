@@ -197,6 +197,7 @@ namespace SData.Compiler {
                                 break;
                             }
                         }
+                        keyList.Add(key);
                         if (!Token(',')) {
                             break;
                         }

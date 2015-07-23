@@ -101,8 +101,8 @@ namespace SData.MSBuild {
             //  v:detailed
         }
         private void LogDiagnostic(Diagnostic diag, DiagStore diagStore) {
-            string subCategory = "SData";
-            var codeString = diag.Code.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            const string subCategory = "SData";
+            var codeString = subCategory + diag.Code.ToString(System.Globalization.CultureInfo.InvariantCulture);
             string helpKeyword = null, filePath = null;
             int startLine = 0, startCol = 0, endLine = 0, endCol = 0;
             var textSpan = diag.TextSpan;

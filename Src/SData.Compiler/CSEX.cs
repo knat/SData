@@ -336,8 +336,11 @@ namespace SData.Compiler {
         internal static QualifiedNameSyntax PropertyMdName {
             get { return CS.QualifiedName(SDataName, "PropertyMd"); }
         }
-        internal static ArrayTypeSyntax PropertyMdArrayType {
-            get { return CS.OneDimArrayType(PropertyMdName); }
+        internal static QualifiedNameSyntax KeyMdName {
+            get { return CS.QualifiedName(SDataName, "KeyMd"); }
+        }
+        internal static ArrayTypeSyntax KeyMdArrayType {
+            get { return CS.OneDimArrayType(KeyMdName); }
         }
         internal static QualifiedNameSyntax NullableTypeMdName {
             get { return CS.QualifiedName(SDataName, "NullableTypeMd"); }
