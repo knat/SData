@@ -3,7 +3,7 @@
     <Metadata>
         <Identity Id="SData.779ef7d9-9344-4851-b074-d765e4c787be" Version="0.7.0" Language="en-US" Publisher="谭克(Tank)" />
         <DisplayName>SData</DisplayName>
-        <Description xml:space="preserve">Schematized Data</Description>
+        <Description xml:space="preserve">SData is an elegant data interchange solution.</Description>
         <MoreInfo>https://github.com/knat/SData</MoreInfo>
         <License>License.txt</License>
     </Metadata>

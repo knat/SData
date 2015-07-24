@@ -106,29 +106,18 @@ namespace SData {
                         sb.Append(uem.MemberName);
                     }
                     else {
-                        var enumerable = value as IEnumerable<object>;
+                        var enumerable = value as IEnumerable;
                         if (enumerable != null) {
-                            context.Append('[');
-                            context.AppendLine();
-                            context.PushIndent();
-                            foreach (var item in enumerable) {
-                                SaveLocalValue(item, null, context);
-                                sb.Append(',');
-                                context.AppendLine();
-                            }
-                            context.PopIndent();
-                            context.Append(']');
-                        }
-                        else {
-                            var dict = value as IDictionary<object, object>;
-                            if (dict != null) {
+                            var enumerator = enumerable.GetEnumerator();
+                            var mapEnumerator = enumerator as IDictionaryEnumerator;
+                            if (mapEnumerator != null) {
                                 context.Append("#[");
                                 context.AppendLine();
                                 context.PushIndent();
-                                foreach (var kv in dict) {
-                                    SaveLocalValue(kv.Key, null, context);
+                                while (mapEnumerator.MoveNext()) {
+                                    SaveLocalValue(mapEnumerator.Key, null, context);
                                     sb.Append(" = ");
-                                    SaveLocalValue(kv.Value, null, context);
+                                    SaveLocalValue(mapEnumerator.Value, null, context);
                                     sb.Append(',');
                                     context.AppendLine();
                                 }
@@ -136,20 +125,36 @@ namespace SData {
                                 context.Append(']');
                             }
                             else {
-                                string s;
-                                var formattable = value as IFormattable;
-                                if (formattable != null) {
-                                    s = formattable.ToString(null, System.Globalization.CultureInfo.InvariantCulture);
+                                context.Append('[');
+                                context.AppendLine();
+                                context.PushIndent();
+                                while (enumerator.MoveNext()) {
+                                    SaveLocalValue(enumerator.Current, null, context);
+                                    sb.Append(',');
+                                    context.AppendLine();
                                 }
-                                else {
-                                    s = value.ToString();
-                                }
-                                if (s != null) {
-                                    SaveAtomValue(s, TypeKind.String, context);
-                                }
-                                else {
-                                    context.Append("null");
-                                }
+                                context.PopIndent();
+                                context.Append(']');
+                            }
+                            var disposable = enumerator as IDisposable;
+                            if (disposable != null) {
+                                disposable.Dispose();
+                            }
+                        }
+                        else {
+                            string s;
+                            var formattable = value as IFormattable;
+                            if (formattable != null) {
+                                s = formattable.ToString(null, System.Globalization.CultureInfo.InvariantCulture);
+                            }
+                            else {
+                                s = value.ToString();
+                            }
+                            if (s != null) {
+                                SaveAtomValue(s, TypeKind.String, context);
+                            }
+                            else {
+                                context.Append("null");
                             }
                         }
                     }

@@ -23,7 +23,7 @@ namespace SData.MSBuild {
         [Required]
         public string CSAssemblyName { get; set; }
         //
-        private const string _genedFileName = "__SDataGenerated.cs";
+        private const string _generatedCSFileName = "__SDataGenerated.cs";
         private static readonly char[] _csPpSeparators = new char[] { ';', ',' };
         private static readonly char[] _csAliasSeparators = new char[] { ',' };
 
@@ -33,59 +33,51 @@ namespace SData.MSBuild {
                 if (schemaFiles.Length == 0) {
                     return true;
                 }
-                var schemaFileList = new List<string>();
-                var csFileList = new List<string>();
-                var csPpList = new List<string>();
-                var csRefList = new List<MetadataReference>();
-                if (SchemaFiles != null) {
-                    foreach (var item in schemaFiles) {
-                        schemaFileList.Add(item.GetMetadata("FullPath"));
+                List<string> schemaFileList = new List<string>();
+                List<string> csFileList = new List<string>();
+                List<string> csPpList = new List<string>();
+                List<MetadataReference> csRefList = new List<MetadataReference>();
+                foreach (var item in schemaFiles) {
+                    schemaFileList.Add(item.GetMetadata("FullPath"));
+                }
+                foreach (var item in CSFiles) {
+                    var path = item.GetMetadata("FullPath");
+                    if (!path.EndsWith(_generatedCSFileName, StringComparison.OrdinalIgnoreCase)) {
+                        csFileList.Add(path);
                     }
                 }
-                if (CSFiles != null) {
-                    foreach (var item in CSFiles) {
-                        var path = item.GetMetadata("FullPath");
-                        if (!path.EndsWith(_genedFileName, StringComparison.OrdinalIgnoreCase)) {
-                            csFileList.Add(path);
-                        }
+                foreach (var s in CSPpString.Split(_csPpSeparators, StringSplitOptions.RemoveEmptyEntries)) {
+                    var s2 = s.Trim();
+                    if (s2.Length > 0) {
+                        csPpList.Add(s2);
                     }
                 }
-                if (CSPpString != null) {
-                    foreach (var s in CSPpString.Split(_csPpSeparators, StringSplitOptions.RemoveEmptyEntries)) {
-                        var s2 = s.Trim();
-                        if (s2.Length > 0) {
-                            csPpList.Add(s2);
-                        }
-                    }
-                }
-                if (CSRefs != null) {
-                    foreach (var item in CSRefs) {
-                        var path = item.ItemSpec;
-                        var aliasesStr = item.GetMetadata("Aliases");
-                        var aliasArray = default(ImmutableArray<string>);
-                        if (!string.IsNullOrEmpty(aliasesStr)) {
-                            var builder = ImmutableArray.CreateBuilder<string>();
-                            foreach (var alias in aliasesStr.Split(_csAliasSeparators, StringSplitOptions.RemoveEmptyEntries)) {
-                                var alias2 = alias.Trim();
-                                if (alias2.Length > 0) {
-                                    builder.Add(alias2);
-                                }
+                foreach (var item in CSRefs) {
+                    var path = item.ItemSpec;
+                    var aliasesStr = item.GetMetadata("Aliases");
+                    var aliasArray = default(ImmutableArray<string>);
+                    if (!string.IsNullOrEmpty(aliasesStr)) {
+                        var builder = ImmutableArray.CreateBuilder<string>();
+                        foreach (var alias in aliasesStr.Split(_csAliasSeparators, StringSplitOptions.RemoveEmptyEntries)) {
+                            var alias2 = alias.Trim();
+                            if (alias2.Length > 0) {
+                                builder.Add(alias2);
                             }
-                            aliasArray = builder.ToImmutable();
                         }
-                        var embedInteropTypes = string.Equals("True", item.GetMetadata("EmbedInteropTypes"), StringComparison.OrdinalIgnoreCase);
-                        csRefList.Add(MetadataReference.CreateFromFile(path: path,
-                            properties: new MetadataReferenceProperties(
-                                kind: MetadataImageKind.Assembly,
-                                aliases: aliasArray,
-                                embedInteropTypes: embedInteropTypes
-                            )));
+                        aliasArray = builder.ToImmutable();
                     }
+                    var embedInteropTypes = string.Equals("True", item.GetMetadata("EmbedInteropTypes"), StringComparison.OrdinalIgnoreCase);
+                    csRefList.Add(MetadataReference.CreateFromFile(path: path,
+                        properties: new MetadataReferenceProperties(
+                            kind: MetadataImageKind.Assembly,
+                            aliases: aliasArray,
+                            embedInteropTypes: embedInteropTypes
+                        )));
                 }
                 //
                 LoadingContext context;
-                string code;
-                var res = SDataCompiler.Compile(schemaFileList, csFileList, csPpList, csRefList, CSAssemblyName, out context, out code);
+                string csCode;
+                var res = SDataCompiler.Compile(schemaFileList, csFileList, csPpList, csRefList, CSAssemblyName, out context, out csCode);
                 var diagStore = new DiagStore();
                 if (context != null) {
                     foreach (var diag in context.DiagnosticList) {
@@ -93,8 +85,8 @@ namespace SData.MSBuild {
                     }
                 }
                 diagStore.Save(ProjectDirectory);
-                if (code != null) {
-                    File.WriteAllText(Path.Combine(ProjectDirectory, _genedFileName), code, System.Text.Encoding.UTF8);
+                if (csCode != null) {
+                    File.WriteAllText(Path.Combine(ProjectDirectory, _generatedCSFileName), csCode, System.Text.Encoding.UTF8);
                 }
                 return res;
             }

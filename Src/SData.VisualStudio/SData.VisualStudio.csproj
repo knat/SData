@@ -55,20 +55,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SData.Compiler\SData.Compiler.csproj">
-      <Project>{7941ca32-b366-49ae-93d8-ee96691a50eb}</Project>
-      <Name>SData.Compiler</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SData.MSBuild\SData.MSBuild.csproj">
-      <Project>{d7bc9675-7d08-4683-9969-c02c73d1bf20}</Project>
-      <Name>SData.MSBuild</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\SData\SData.csproj">
-      <Project>{eb2480c4-a4fc-402e-b68d-0486d1e4d9dd}</Project>
-      <Name>SData</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="envdte, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
@@ -106,7 +92,20 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\SData.Compiler\SData.Compiler.csproj">
+      <Project>{7941ca32-b366-49ae-93d8-ee96691a50eb}</Project>
+      <Name>SData.Compiler</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SData.MSBuild\SData.MSBuild.csproj">
+      <Project>{d7bc9675-7d08-4683-9969-c02c73d1bf20}</Project>
+      <Name>SData.MSBuild</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SData\SData.csproj">
+      <Project>{eb2480c4-a4fc-402e-b68d-0486d1e4d9dd}</Project>
+      <Name>SData</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
