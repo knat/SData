@@ -2,22 +2,29 @@
 using System.Collections.Generic;
 using SData.Internal;
 
-namespace SData.Compiler {
-    internal sealed class CompilationUnitNode {
-        public CompilationUnitNode() {
+namespace SData.Compiler
+{
+    internal sealed class CompilationUnitNode
+    {
+        public CompilationUnitNode()
+        {
             NamespaceList = new List<NamespaceNode>();
         }
         public readonly List<NamespaceNode> NamespaceList;
     }
-    internal sealed class NamespaceNode {
-        internal NamespaceNode(Token uri) {
+    internal sealed class NamespaceNode
+    {
+        internal NamespaceNode(Token uri)
+        {
             Uri = uri;
             ImportList = new List<ImportNode>();
             GlobalTypeMap = new Dictionary<Token, GlobalTypeNode>();
         }
         public readonly Token Uri;
-        public string UriValue {
-            get {
+        public string UriValue
+        {
+            get
+            {
                 return Uri.Value;
             }
         }
@@ -25,55 +32,74 @@ namespace SData.Compiler {
         public readonly Dictionary<Token, GlobalTypeNode> GlobalTypeMap;
         public NamespaceInfo NamespaceInfo;
         //
-        public void ResolveImports(NamespaceInfoMap nsInfoMap) {
-            foreach (var import in ImportList) {
-                if (!nsInfoMap.TryGetValue(import.Uri.Value, out import.NamespaceInfo)) {
+        public void ResolveImports(NamespaceInfoMap nsInfoMap)
+        {
+            foreach (var import in ImportList)
+            {
+                if (!nsInfoMap.TryGetValue(import.Uri.Value, out import.NamespaceInfo))
+                {
                     CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidNamespaceReference, import.Uri.Value),
                         import.Uri.TextSpan);
                 }
             }
         }
-        public void Resolve() {
-            foreach (var globalType in GlobalTypeMap.Values) {
+        public void Resolve()
+        {
+            foreach (var globalType in GlobalTypeMap.Values)
+            {
                 globalType.Resolve();
             }
         }
-        public void CreateInfos() {
-            foreach (var globalType in GlobalTypeMap.Values) {
+        public void CreateInfos()
+        {
+            foreach (var globalType in GlobalTypeMap.Values)
+            {
                 globalType.CreateInfo();
             }
         }
-        public GlobalTypeNode ResolveQName(QualifiableNameNode qName) {
+        public GlobalTypeNode ResolveQName(QualifiableNameNode qName)
+        {
             GlobalTypeNode result = null;
             var name = qName.Name;
-            if (qName.IsQualified) {
+            if (qName.IsQualified)
+            {
                 var alias = qName.Alias;
-                if (alias.Value == "sys") {
+                if (alias.Value == "sys")
+                {
                     result = AtomTypeNode.TryGet(name.Value);
                 }
-                else {
+                else
+                {
                     ImportNode import = null;
-                    foreach (var item in ImportList) {
-                        if (item.Alias == alias) {
+                    foreach (var item in ImportList)
+                    {
+                        if (item.Alias == alias)
+                        {
                             import = item;
                             break;
                         }
                     }
-                    if (import == null) {
+                    if (import == null)
+                    {
                         CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidNamespaceAliasReference, alias.Value),
                             alias.TextSpan);
                     }
                     result = import.NamespaceInfo.TryGetGlobalTypeNode(name);
                 }
             }
-            else {
+            else
+            {
                 result = NamespaceInfo.TryGetGlobalTypeNode(name);
-                if (result == null) {
+                if (result == null)
+                {
                     result = AtomTypeNode.TryGet(name.Value);
-                    foreach (var import in ImportList) {
+                    foreach (var import in ImportList)
+                    {
                         var globalType = import.NamespaceInfo.TryGetGlobalTypeNode(name);
-                        if (globalType != null) {
-                            if (result != null) {
+                        if (globalType != null)
+                        {
+                            if (result != null)
+                            {
                                 CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.AmbiguousGlobalTypeReference, name.Value),
                                     name.TextSpan);
                             }
@@ -82,30 +108,37 @@ namespace SData.Compiler {
                     }
                 }
             }
-            if (result == null) {
+            if (result == null)
+            {
                 CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidGlobalTypeReference, name.Value), name.TextSpan);
             }
             return result;
         }
-        public ClassTypeNode ResolveQNameAsClass(QualifiableNameNode qName) {
+        public ClassTypeNode ResolveQNameAsClass(QualifiableNameNode qName)
+        {
             var result = ResolveQName(qName) as ClassTypeNode;
-            if (result == null) {
+            if (result == null)
+            {
                 CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidClassReference, qName.Name.Value),
                     qName.TextSpan);
             }
             return result;
         }
-        public AtomTypeNode ResolveQNameAsAtom(QualifiableNameNode qName) {
+        public AtomTypeNode ResolveQNameAsAtom(QualifiableNameNode qName)
+        {
             var result = ResolveQName(qName) as AtomTypeNode;
-            if (result == null) {
+            if (result == null)
+            {
                 CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidAtomReference, qName.Name.Value),
                     qName.TextSpan);
             }
             return result;
         }
     }
-    internal sealed class ImportNode {
-        public ImportNode(Token uri, Token alias) {
+    internal sealed class ImportNode
+    {
+        public ImportNode(Token uri, Token alias)
+        {
             Uri = uri;
             Alias = alias;
             NamespaceInfo = null;
@@ -114,54 +147,71 @@ namespace SData.Compiler {
         public readonly Token Alias;//opt
         public NamespaceInfo NamespaceInfo;
     }
-    internal struct QualifiableNameNode {
-        public QualifiableNameNode(Token alias, Token name) {
+    internal struct QualifiableNameNode
+    {
+        public QualifiableNameNode(Token alias, Token name)
+        {
             Alias = alias;
             Name = name;
         }
         public readonly Token Alias;//opt
         public readonly Token Name;
-        public bool IsQualified {
-            get {
+        public bool IsQualified
+        {
+            get
+            {
                 return Alias.IsValid;
             }
         }
-        public bool IsValid {
-            get {
+        public bool IsValid
+        {
+            get
+            {
                 return Name.IsValid;
             }
         }
-        public TextSpan TextSpan {
-            get {
+        public TextSpan TextSpan
+        {
+            get
+            {
                 return Name.TextSpan;
             }
         }
-        public override string ToString() {
-            if (IsQualified) {
+        public override string ToString()
+        {
+            if (IsQualified)
+            {
                 return Alias.Value + "::" + Name.Value;
             }
             return Name.Value;
         }
     }
-    internal abstract class NamespaceDescendantNode {
-        protected NamespaceDescendantNode(NamespaceNode ns) {
+    internal abstract class NamespaceDescendantNode
+    {
+        protected NamespaceDescendantNode(NamespaceNode ns)
+        {
             Namespace = ns;
         }
         public readonly NamespaceNode Namespace;
     }
 
-    internal abstract class GlobalTypeNode : NamespaceDescendantNode {
+    internal abstract class GlobalTypeNode : NamespaceDescendantNode
+    {
         public GlobalTypeNode(NamespaceNode ns, Token name)
-            : base(ns) {
+            : base(ns)
+        {
             Name = name;
         }
         public readonly Token Name;
         public abstract void Resolve();
         protected GlobalTypeInfo _info;
         private bool _isProcessing;
-        public GlobalTypeInfo CreateInfo() {
-            if (_info == null) {
-                if (_isProcessing) {
+        public GlobalTypeInfo CreateInfo()
+        {
+            if (_info == null)
+            {
+                if (_isProcessing)
+                {
                     CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.CircularReferenceNotAllowed), Name.TextSpan);
                 }
                 _isProcessing = true;
@@ -174,54 +224,68 @@ namespace SData.Compiler {
         }
         protected abstract GlobalTypeInfo CreateInfoCore(NamespaceInfo nsInfo);
     }
-    internal abstract class SimpleGlobalTypeNode : GlobalTypeNode {
+    internal abstract class SimpleGlobalTypeNode : GlobalTypeNode
+    {
         protected SimpleGlobalTypeNode(NamespaceNode ns, Token name) : base(ns, name) { }
     }
 
-    internal sealed class AtomTypeNode : SimpleGlobalTypeNode {
+    internal sealed class AtomTypeNode : SimpleGlobalTypeNode
+    {
         private static readonly Dictionary<string, AtomTypeNode> _map;
-        static AtomTypeNode() {
+        static AtomTypeNode()
+        {
             _map = new Dictionary<string, AtomTypeNode>();
-            for (var kind = AtomExtensionsEx.AtomTypeStart; kind <= AtomExtensionsEx.AtomTypeEnd; ++kind) {
+            for (var kind = AtomExtensionsEx.AtomTypeStart; kind <= AtomExtensionsEx.AtomTypeEnd; ++kind)
+            {
                 _map.Add(kind.ToString(), new AtomTypeNode(AtomTypeInfo.Get(kind)));
             }
         }
-        public static AtomTypeNode TryGet(string name) {
+        public static AtomTypeNode TryGet(string name)
+        {
             AtomTypeNode result;
             _map.TryGetValue(name, out result);
             return result;
         }
         private AtomTypeNode(AtomTypeInfo info)
-            : base(null, default(Token)) {
+            : base(null, default(Token))
+        {
             _info = info;
         }
-        public override void Resolve() {
+        public override void Resolve()
+        {
             throw new NotImplementedException();
         }
-        protected override GlobalTypeInfo CreateInfoCore(NamespaceInfo nsInfo) {
+        protected override GlobalTypeInfo CreateInfoCore(NamespaceInfo nsInfo)
+        {
             throw new NotImplementedException();
         }
     }
-    internal sealed class EnumTypeNode : SimpleGlobalTypeNode {
+    internal sealed class EnumTypeNode : SimpleGlobalTypeNode
+    {
         public EnumTypeNode(NamespaceNode ns, Token name, QualifiableNameNode underlyingTypeQName)
-            : base(ns, name) {
+            : base(ns, name)
+        {
             UnderlyingTypeQName = underlyingTypeQName;
             MemberMap = new Dictionary<Token, Token>();
         }
         public readonly QualifiableNameNode UnderlyingTypeQName;
         public AtomTypeNode UnderlyingType;
         public readonly Dictionary<Token, Token> MemberMap;
-        public override void Resolve() {
+        public override void Resolve()
+        {
             UnderlyingType = Namespace.ResolveQNameAsAtom(UnderlyingTypeQName);
         }
-        protected override GlobalTypeInfo CreateInfoCore(NamespaceInfo nsInfo) {
+        protected override GlobalTypeInfo CreateInfoCore(NamespaceInfo nsInfo)
+        {
             var underlyingTypeInfo = (AtomTypeInfo)UnderlyingType.CreateInfo();
             var memberInfoMap = new Dictionary<string, object>();
             var typeKind = underlyingTypeInfo.Kind;
-            foreach (var kv in MemberMap) {
+            foreach (var kv in MemberMap)
+            {
                 var valueToken = kv.Value;
                 var value = AtomExtensions.TryParse(typeKind, valueToken.Value, true);
-                if (value == null) {
+                if (value == null)
+                {
                     CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.InvalidAtomValue, typeKind.ToString(), valueToken.Value),
                         valueToken.TextSpan);
                 }
@@ -230,45 +294,57 @@ namespace SData.Compiler {
             return new EnumTypeInfo(nsInfo, Name.Value, underlyingTypeInfo, memberInfoMap);
         }
     }
-    internal sealed class ClassTypeNode : GlobalTypeNode {
+    internal sealed class ClassTypeNode : GlobalTypeNode
+    {
         public ClassTypeNode(NamespaceNode ns, Token name, Token abstractOrSealed, QualifiableNameNode baseClassQName, List<KeyNode> keyList)
-            : base(ns, name) {
+            : base(ns, name)
+        {
             AbstractOrSealed = abstractOrSealed;
             BaseClassQName = baseClassQName;
             KeyList = keyList;
             PropertyMap = new Dictionary<Token, LocalTypeNode>();
         }
         public readonly Token AbstractOrSealed;
-        public bool IsAbstract {
+        public bool IsAbstract
+        {
             get { return AbstractOrSealed.Value == ParserConstants.AbstractKeyword; }
         }
-        public bool IsSealed {
+        public bool IsSealed
+        {
             get { return AbstractOrSealed.Value == ParserConstants.SealedKeyword; }
         }
         public readonly QualifiableNameNode BaseClassQName;//opt
         public ClassTypeNode BaseClass;
         public readonly List<KeyNode> KeyList;//opt
         public readonly Dictionary<Token, LocalTypeNode> PropertyMap;
-        public override void Resolve() {
-            if (BaseClassQName.IsValid) {
+        public override void Resolve()
+        {
+            if (BaseClassQName.IsValid)
+            {
                 BaseClass = Namespace.ResolveQNameAsClass(BaseClassQName);
             }
-            foreach (var type in PropertyMap.Values) {
+            foreach (var type in PropertyMap.Values)
+            {
                 type.Resolve();
             }
         }
-        protected override GlobalTypeInfo CreateInfoCore(NamespaceInfo nsInfo) {
+        protected override GlobalTypeInfo CreateInfoCore(NamespaceInfo nsInfo)
+        {
             ClassTypeInfo baseClassInfo = null;
-            if (BaseClass != null) {
+            if (BaseClass != null)
+            {
                 baseClassInfo = (ClassTypeInfo)BaseClass.CreateInfo();
-                if (baseClassInfo.IsSealed) {
+                if (baseClassInfo.IsSealed)
+                {
                     CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.BaseClassIsSealed), BaseClassQName.TextSpan);
                 }
             }
             var propInfoMap = new Dictionary<string, PropertyInfo>();
-            foreach (var kv in PropertyMap) {
+            foreach (var kv in PropertyMap)
+            {
                 var nameToken = kv.Key;
-                if (baseClassInfo != null && baseClassInfo.TryGetPropertyInHierarchy(nameToken.Value) != null) {
+                if (baseClassInfo != null && baseClassInfo.TryGetPropertyInHierarchy(nameToken.Value) != null)
+                {
                     CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicatePropertyName, nameToken.Value),
                         nameToken.TextSpan);
                 }
@@ -277,12 +353,15 @@ namespace SData.Compiler {
             return new ClassTypeInfo(nsInfo, Name.Value, IsAbstract, IsSealed, baseClassInfo, KeyList, propInfoMap);
         }
     }
-    internal sealed class KeyNode : List<Token> {
+    internal sealed class KeyNode : List<Token>
+    {
     }
 
-    internal abstract class LocalTypeNode : NamespaceDescendantNode {
+    internal abstract class LocalTypeNode : NamespaceDescendantNode
+    {
         protected LocalTypeNode(NamespaceNode ns, TextSpan textSpan)
-            : base(ns) {
+            : base(ns)
+        {
             TextSpan = textSpan;
         }
         public readonly TextSpan TextSpan;
@@ -290,55 +369,71 @@ namespace SData.Compiler {
         public abstract LocalTypeInfo CreateInfo();
     }
     //nullable<element>
-    internal sealed class NullableTypeNode : LocalTypeNode {
+    internal sealed class NullableTypeNode : LocalTypeNode
+    {
         public NullableTypeNode(NamespaceNode ns, TextSpan textSpan, NonNullableTypeNode element)
-            : base(ns, textSpan) {
+            : base(ns, textSpan)
+        {
             Element = element;
         }
         public readonly NonNullableTypeNode Element;
-        public override void Resolve() {
+        public override void Resolve()
+        {
             Element.Resolve();
         }
-        public override LocalTypeInfo CreateInfo() {
+        public override LocalTypeInfo CreateInfo()
+        {
             return new NullableTypeInfo((NonNullableTypeInfo)Element.CreateInfo());
         }
     }
-    internal abstract class NonNullableTypeNode : LocalTypeNode {
+    internal abstract class NonNullableTypeNode : LocalTypeNode
+    {
         protected NonNullableTypeNode(NamespaceNode ns, TextSpan textSpan)
-            : base(ns, textSpan) {
+            : base(ns, textSpan)
+        {
         }
     }
-    internal sealed class GlobalTypeRefNode : NonNullableTypeNode {
+    internal sealed class GlobalTypeRefNode : NonNullableTypeNode
+    {
         public GlobalTypeRefNode(NamespaceNode ns, TextSpan textSpan, QualifiableNameNode globalTypeQName)
-            : base(ns, textSpan) {
+            : base(ns, textSpan)
+        {
             GlobalTypeQName = globalTypeQName;
         }
         public readonly QualifiableNameNode GlobalTypeQName;
         public GlobalTypeNode GlobalType;
-        public override void Resolve() {
+        public override void Resolve()
+        {
             GlobalType = Namespace.ResolveQName(GlobalTypeQName);
         }
-        public override LocalTypeInfo CreateInfo() {
+        public override LocalTypeInfo CreateInfo()
+        {
             return new GlobalTypeRefInfo(GlobalType.CreateInfo());
         }
     }
     //list<item>, set<item>
-    internal sealed class ListOrSetTypeNode : NonNullableTypeNode {
+    internal sealed class ListOrSetTypeNode : NonNullableTypeNode
+    {
         public ListOrSetTypeNode(NamespaceNode ns, TextSpan textSpan, bool isList, LocalTypeNode item)
-            : base(ns, textSpan) {
+            : base(ns, textSpan)
+        {
             IsList = isList;
             Item = item;
         }
         public readonly bool IsList;
         public readonly LocalTypeNode Item;
-        public override void Resolve() {
+        public override void Resolve()
+        {
             Item.Resolve();
         }
-        public override LocalTypeInfo CreateInfo() {
+        public override LocalTypeInfo CreateInfo()
+        {
             var itemInfo = Item.CreateInfo();
-            if (!IsList) {
+            if (!IsList)
+            {
                 var clsInfo = ((GlobalTypeRefInfo)itemInfo).ClassType;
-                if (clsInfo != null && !clsInfo.HasKey) {
+                if (clsInfo != null && !clsInfo.HasKey)
+                {
                     CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.KeyRequiredForClassUsedAsSetItemOrMapKey),
                         Item.TextSpan);
                 }
@@ -348,22 +443,27 @@ namespace SData.Compiler {
     }
 
     //map<key, value>
-    internal sealed class MapTypeNode : NonNullableTypeNode {
+    internal sealed class MapTypeNode : NonNullableTypeNode
+    {
         public MapTypeNode(NamespaceNode ns, TextSpan textSpan, GlobalTypeRefNode key, LocalTypeNode value)
-            : base(ns, textSpan) {
+            : base(ns, textSpan)
+        {
             Key = key;
             Value = value;
         }
         public readonly GlobalTypeRefNode Key;
         public readonly LocalTypeNode Value;
-        public override void Resolve() {
+        public override void Resolve()
+        {
             Key.Resolve();
             Value.Resolve();
         }
-        public override LocalTypeInfo CreateInfo() {
+        public override LocalTypeInfo CreateInfo()
+        {
             var keyInfo = (GlobalTypeRefInfo)Key.CreateInfo();
             var clsInfo = keyInfo.ClassType;
-            if (clsInfo != null && !clsInfo.HasKey) {
+            if (clsInfo != null && !clsInfo.HasKey)
+            {
                 CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.KeyRequiredForClassUsedAsSetItemOrMapKey),
                     Key.TextSpan);
             }

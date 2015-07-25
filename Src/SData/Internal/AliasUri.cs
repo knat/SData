@@ -1,7 +1,10 @@
 ﻿
-namespace SData.Internal {
-    public struct AliasUri {
-        public AliasUri(string alias, string uri) {
+namespace SData.Internal
+{
+    public struct AliasUri
+    {
+        public AliasUri(string alias, string uri)
+        {
             Alias = alias;
             Uri = uri;
         }

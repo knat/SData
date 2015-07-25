@@ -1,9 +1,12 @@
 ﻿using System.Runtime.Serialization;
 
-namespace SData {
+namespace SData
+{
     [DataContract(Namespace = Extensions.SystemUri)]
-    public struct TextSpan {
-        public TextSpan(string filePath, int startIndex, int length, TextPosition startPosition, TextPosition endPosition) {
+    public struct TextSpan
+    {
+        public TextSpan(string filePath, int startIndex, int length, TextPosition startPosition, TextPosition endPosition)
+        {
             //if (filePath == null) throw new ArgumentNullException("filePath");
             //if (startIndex < 0) throw new ArgumentOutOfRangeException("startIndex");
             //if (length < 0) throw new ArgumentOutOfRangeException("length");
@@ -23,13 +26,17 @@ namespace SData {
         public readonly TextPosition StartPosition;
         [DataMember]
         public readonly TextPosition EndPosition;
-        public bool IsValid {
-            get {
+        public bool IsValid
+        {
+            get
+            {
                 return FilePath != null;
             }
         }
-        public override string ToString() {
-            if (IsValid) {
+        public override string ToString()
+        {
+            if (IsValid)
+            {
                 return FilePath + ": (" + StartPosition.ToString() + ")-(" + EndPosition.ToString() + ")";
             }
             return null;
@@ -37,8 +44,10 @@ namespace SData {
     }
 
     [DataContract(Namespace = Extensions.SystemUri)]
-    public struct TextPosition {
-        public TextPosition(int line, int column) {
+    public struct TextPosition
+    {
+        public TextPosition(int line, int column)
+        {
             //if (line < 1) throw new ArgumentOutOfRangeException("line");
             //if (column < 1) throw new ArgumentOutOfRangeException("column");
             Line = line;
@@ -48,12 +57,15 @@ namespace SData {
         public readonly int Line;//1-based
         [DataMember]
         public readonly int Column;//1-based
-        public bool IsValid {
-            get {
+        public bool IsValid
+        {
+            get
+            {
                 return Line > 0 && Column > 0;
             }
         }
-        public override string ToString() {
+        public override string ToString()
+        {
             return Line + "," + Column;
         }
     }

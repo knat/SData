@@ -1,20 +1,25 @@
 ﻿using System;
 
-namespace SData.Internal {
-
-    public struct DiagMsg {
-        public DiagMsg(DiagnosticCode code) {
+namespace SData.Internal
+{
+    public struct DiagMsg
+    {
+        public DiagMsg(DiagnosticCode code)
+        {
             Code = code;
             _msgArgs = null;
         }
-        public DiagMsg(DiagnosticCode code, params string[] msgArgs) {
+        public DiagMsg(DiagnosticCode code, params string[] msgArgs)
+        {
             Code = code;
             _msgArgs = msgArgs;
         }
         public readonly DiagnosticCode Code;
         private readonly string[] _msgArgs;
-        public string GetMessage() {
-            switch (Code) {
+        public string GetMessage()
+        {
+            switch (Code)
+            {
                 case DiagnosticCode.DuplicateUriAlias:
                     return "Duplicate uri alias '{0}'.".InvFormat(_msgArgs);
                 case DiagnosticCode.InvalidUriReference:

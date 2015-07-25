@@ -5,41 +5,52 @@ using System.Text;
 using System.Collections;
 using SData.Internal;
 
-namespace SData {
-    public static class Serializer {
-        public static bool TryLoad<T>(string filePath, TextReader reader, LoadingContext context, ClassTypeMd classTypeMd, out T result) where T : class {
+namespace SData
+{
+    public static class Serializer
+    {
+        public static bool TryLoad<T>(string filePath, TextReader reader, LoadingContext context, ClassTypeMd classTypeMd, out T result) where T : class
+        {
             object obj;
-            if (Parser.Parse(filePath, reader, context, classTypeMd, out obj)) {
+            if (Parser.Parse(filePath, reader, context, classTypeMd, out obj))
+            {
                 result = (T)obj;
                 return true;
             }
             result = null;
             return false;
         }
-        public static void Save(object obj, ClassTypeMd classTypeMd, TextWriter writer, string indentString = "\t", string newLineString = "\n") {
+        public static void Save(object obj, ClassTypeMd classTypeMd, TextWriter writer, string indentString = "\t", string newLineString = "\n")
+        {
             if (writer == null) throw new ArgumentNullException("writer");
             var sb = StringBuilderBuffer.Acquire();
             Save(obj, classTypeMd, sb, indentString, newLineString);
             writer.Write(sb.ToStringAndRelease());
         }
-        public static void Save(object obj, ClassTypeMd classTypeMd, StringBuilder stringBuilder, string indentString = "\t", string newLineString = "\n") {
+        public static void Save(object obj, ClassTypeMd classTypeMd, StringBuilder stringBuilder, string indentString = "\t", string newLineString = "\n")
+        {
             if (obj == null) throw new ArgumentNullException("obj");
             if (classTypeMd == null) throw new ArgumentNullException("classTypeMd");
             SaveClassValue(true, obj, classTypeMd, new SavingContext(stringBuilder, indentString, newLineString));
         }
-        private static void SaveClassValue(bool isRoot, object obj, ClassTypeMd declaredClsMd, SavingContext context) {
-            if (declaredClsMd != null) {
+        private static void SaveClassValue(bool isRoot, object obj, ClassTypeMd declaredClsMd, SavingContext context)
+        {
+            if (declaredClsMd != null)
+            {
                 var clsMd = declaredClsMd.GetMetadata(obj);
-                if (clsMd != declaredClsMd) {
+                if (clsMd != declaredClsMd)
+                {
                     context.AppendTypeIndicator(clsMd.FullName);
                 }
                 context.Append('{');
                 context.AppendLine();
                 context.PushIndent();
                 var sb = context.StringBuilder;
-                foreach (var propMd in clsMd._propertyMap.Values) {
+                foreach (var propMd in clsMd._propertyMap.Values)
+                {
                     var propValue = propMd.GetValue(obj);
-                    if (propValue != null) {
+                    if (propValue != null)
+                    {
                         context.Append(propMd.Name);
                         sb.Append(" = ");
                         SaveLocalValue(propValue, propMd.Type, context);
@@ -51,10 +62,13 @@ namespace SData {
                 context.PopIndent();
                 context.Append('}');
             }
-            else {
+            else
+            {
                 var utobj = obj as UntypedObject;
-                if (utobj != null) {
-                    if (utobj.HasClassFullName) {
+                if (utobj != null)
+                {
+                    if (utobj.HasClassFullName)
+                    {
                         context.AppendTypeIndicator(utobj.ClassFullName);
                     }
                     context.Append('{');
@@ -65,16 +79,21 @@ namespace SData {
                     context.Append('}');
                 }
             }
-            if (isRoot) {
+            if (isRoot)
+            {
                 context.InsertAliasUriList();
             }
         }
-        private static void SaveUntypedProperties(Dictionary<string, object> props, SavingContext context) {
-            if (props != null) {
+        private static void SaveUntypedProperties(Dictionary<string, object> props, SavingContext context)
+        {
+            if (props != null)
+            {
                 var sb = context.StringBuilder;
-                foreach (var kv in props) {
+                foreach (var kv in props)
+                {
                     var propValue = kv.Value;
-                    if (propValue != null) {
+                    if (propValue != null)
+                    {
                         context.Append(kv.Key);
                         sb.Append(" = ");
                         SaveLocalValue(propValue, null, context);
@@ -84,104 +103,128 @@ namespace SData {
                 }
             }
         }
-        private static void SaveLocalValue(object value, LocalTypeMd typeMd, SavingContext context) {
-            if (value == null) {
+        private static void SaveLocalValue(object value, LocalTypeMd typeMd, SavingContext context)
+        {
+            if (value == null)
+            {
                 context.Append("null");
                 return;
             }
             var sb = context.StringBuilder;
-            if (typeMd == null) {
+            if (typeMd == null)
+            {
                 var typeKind = AtomExtensionsEx.GetTypeKind(value);
-                if (typeKind != TypeKind.None) {
+                if (typeKind != TypeKind.None)
+                {
                     SaveAtomValue(value, typeKind, context);
                 }
-                else if (value is UntypedObject) {
+                else if (value is UntypedObject)
+                {
                     SaveClassValue(false, value, null, context);
                 }
-                else {
+                else
+                {
                     var uem = value as UntypedEnumValue;
-                    if (uem != null) {
+                    if (uem != null)
+                    {
                         context.AppendFullName(uem.EnumFullName);
                         sb.Append('.');
                         sb.Append(uem.MemberName);
                     }
-                    else {
+                    else
+                    {
                         var enumerable = value as IEnumerable;
-                        if (enumerable != null) {
+                        if (enumerable != null)
+                        {
                             var enumerator = enumerable.GetEnumerator();
                             var mapEnumerator = enumerator as IDictionaryEnumerator;
-                            if (mapEnumerator != null) {
+                            if (mapEnumerator != null)
+                            {
                                 context.Append("#[");
                                 context.AppendLine();
                                 context.PushIndent();
-                                while (mapEnumerator.MoveNext()) {
+                                while (mapEnumerator.MoveNext())
+                                {
                                     SaveLocalValue(mapEnumerator.Key, null, context);
                                     sb.Append(" = ");
                                     SaveLocalValue(mapEnumerator.Value, null, context);
                                     sb.Append(',');
                                     context.AppendLine();
                                 }
-                                context.PopIndent();
-                                context.Append(']');
                             }
-                            else {
+                            else
+                            {
                                 context.Append('[');
                                 context.AppendLine();
                                 context.PushIndent();
-                                while (enumerator.MoveNext()) {
+                                while (enumerator.MoveNext())
+                                {
                                     SaveLocalValue(enumerator.Current, null, context);
                                     sb.Append(',');
                                     context.AppendLine();
                                 }
-                                context.PopIndent();
-                                context.Append(']');
                             }
+                            context.PopIndent();
+                            context.Append(']');
                             var disposable = enumerator as IDisposable;
-                            if (disposable != null) {
+                            if (disposable != null)
+                            {
                                 disposable.Dispose();
                             }
                         }
-                        else {
+                        else
+                        {
                             string s;
                             var formattable = value as IFormattable;
-                            if (formattable != null) {
+                            if (formattable != null)
+                            {
                                 s = formattable.ToString(null, System.Globalization.CultureInfo.InvariantCulture);
                             }
-                            else {
+                            else
+                            {
                                 s = value.ToString();
                             }
-                            if (s != null) {
+                            if (s != null)
+                            {
                                 SaveAtomValue(s, TypeKind.String, context);
                             }
-                            else {
+                            else
+                            {
                                 context.Append("null");
                             }
                         }
                     }
                 }
             }
-            else {//typeMd != null
+            else
+            {//typeMd != null
                 var nonNullableTypeMd = typeMd.NonNullableType;
                 var typeKind = nonNullableTypeMd.Kind;
-                if (typeKind.IsAtom()) {
+                if (typeKind.IsAtom())
+                {
                     SaveAtomValue(value, typeKind, context);
                 }
-                else if (typeKind == TypeKind.Class) {
+                else if (typeKind == TypeKind.Class)
+                {
                     SaveClassValue(false, value, nonNullableTypeMd.TryGetGlobalType<ClassTypeMd>(), context);
                 }
-                else if (typeKind == TypeKind.Enum) {
+                else if (typeKind == TypeKind.Enum)
+                {
                     var enumMd = nonNullableTypeMd.TryGetGlobalType<EnumTypeMd>();
                     var memberName = enumMd.TryGetMemberName(value);
-                    if (memberName == null) {
+                    if (memberName == null)
+                    {
                         SaveAtomValue(value, enumMd.UnderlyingType.Kind, context);
                     }
-                    else {
+                    else
+                    {
                         context.AppendFullName(enumMd.FullName);
                         sb.Append('.');
                         sb.Append(memberName);
                     }
                 }
-                else if (typeKind == TypeKind.Map) {
+                else if (typeKind == TypeKind.Map)
+                {
                     var collMd = (CollectionTypeMd)nonNullableTypeMd;
                     var keyMd = collMd.MapKeyType;
                     var valueMd = collMd.ItemOrValueType;
@@ -189,8 +232,10 @@ namespace SData {
                     context.AppendLine();
                     context.PushIndent();
                     IDictionaryEnumerator mapEnumerator = collMd.GetMapEnumerator(value);
-                    if (mapEnumerator != null) {
-                        while (mapEnumerator.MoveNext()) {
+                    if (mapEnumerator != null)
+                    {
+                        while (mapEnumerator.MoveNext())
+                        {
                             SaveLocalValue(mapEnumerator.Key, keyMd, context);
                             sb.Append(" = ");
                             SaveLocalValue(mapEnumerator.Value, valueMd, context);
@@ -198,19 +243,22 @@ namespace SData {
                             context.AppendLine();
                         }
                         var disposable = mapEnumerator as IDisposable;
-                        if (disposable != null) {
+                        if (disposable != null)
+                        {
                             disposable.Dispose();
                         }
                     }
                     context.PopIndent();
                     context.Append(']');
                 }
-                else {//list or set
+                else
+                {//list or set
                     var itemMd = ((CollectionTypeMd)nonNullableTypeMd).ItemOrValueType;
                     context.Append('[');
                     context.AppendLine();
                     context.PushIndent();
-                    foreach (var item in (IEnumerable)value) {
+                    foreach (var item in (IEnumerable)value)
+                    {
                         SaveLocalValue(item, itemMd, context);
                         sb.Append(',');
                         context.AppendLine();
@@ -220,10 +268,12 @@ namespace SData {
                 }
             }
         }
-        private static void SaveAtomValue(object value, TypeKind typeKind, SavingContext context) {
+        private static void SaveAtomValue(object value, TypeKind typeKind, SavingContext context)
+        {
             context.Append(null);
             var sb = context.StringBuilder;
-            switch (typeKind) {
+            switch (typeKind)
+            {
                 case TypeKind.String:
                     AtomExtensionsEx.GetLiteral((string)value, sb);
                     break;
@@ -264,10 +314,12 @@ namespace SData {
                     {
                         bool isLiteral;
                         var s = ((double)value).ToInvString(out isLiteral);
-                        if (isLiteral) {
+                        if (isLiteral)
+                        {
                             AtomExtensionsEx.GetLiteral(s, sb);
                         }
-                        else {
+                        else
+                        {
                             sb.Append(s);
                         }
                     }
@@ -276,10 +328,12 @@ namespace SData {
                     {
                         bool isLiteral;
                         var s = ((float)value).ToInvString(out isLiteral);
-                        if (isLiteral) {
+                        if (isLiteral)
+                        {
                             AtomExtensionsEx.GetLiteral(s, sb);
                         }
-                        else {
+                        else
+                        {
                             sb.Append(s);
                         }
                     }

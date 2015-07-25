@@ -7,62 +7,80 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SData.Internal;
 
-namespace SData.Compiler {
-    public static class SDataCompiler {
+namespace SData.Compiler
+{
+    public static class SDataCompiler
+    {
         public static bool Compile(IReadOnlyList<string> schemaFileList,
             IReadOnlyList<string> csFileList, IReadOnlyList<string> csPpList, IReadOnlyList<MetadataReference> csRefList, string csAssemblyName,
-            out LoadingContext context, out string csCode) {
+            out LoadingContext context, out string csCode)
+        {
             context = null;
             csCode = _csGeneratedFileBanner;
-            if (schemaFileList == null || schemaFileList.Count == 0) {
+            if (schemaFileList == null || schemaFileList.Count == 0)
+            {
                 return true;
             }
-            try {
+            try
+            {
                 context = CompilerContext.Current = new CompilerContext();
                 var cuList = new List<CompilationUnitNode>();
-                foreach (var schemaFile in schemaFileList) {
-                    using (var reader = new StreamReader(schemaFile)) {
+                foreach (var schemaFile in schemaFileList)
+                {
+                    using (var reader = new StreamReader(schemaFile))
+                    {
                         CompilationUnitNode cuNode;
-                        if (Parser.Parse(schemaFile, reader, context, out cuNode)) {
+                        if (Parser.Parse(schemaFile, reader, context, out cuNode))
+                        {
                             cuList.Add(cuNode);
                         }
-                        else {
+                        else
+                        {
                             return false;
                         }
                     }
                 }
                 var nsList = new List<NamespaceNode>();
-                foreach (var cu in cuList) {
+                foreach (var cu in cuList)
+                {
                     nsList.AddRange(cu.NamespaceList);
                 }
-                if (nsList.Count == 0) {
+                if (nsList.Count == 0)
+                {
                     return true;
                 }
                 var nsInfoMap = new NamespaceInfoMap();
-                foreach (var ns in nsList) {
+                foreach (var ns in nsList)
+                {
                     var uri = ns.UriValue;
                     NamespaceInfo nsInfo;
-                    if (!nsInfoMap.TryGetValue(uri, out nsInfo)) {
+                    if (!nsInfoMap.TryGetValue(uri, out nsInfo))
+                    {
                         nsInfo = new NamespaceInfo(uri);
                         nsInfoMap.Add(uri, nsInfo);
                     }
                     nsInfo.NamespaceNodeList.Add(ns);
                     ns.NamespaceInfo = nsInfo;
                 }
-                foreach (var ns in nsList) {
+                foreach (var ns in nsList)
+                {
                     ns.ResolveImports(nsInfoMap);
                 }
-                foreach (var nsInfo in nsInfoMap.Values) {
+                foreach (var nsInfo in nsInfoMap.Values)
+                {
                     nsInfo.CheckDuplicateGlobalTypeNodes();
                 }
-                foreach (var ns in nsList) {
+                foreach (var ns in nsList)
+                {
                     ns.Resolve();
                 }
-                foreach (var ns in nsList) {
+                foreach (var ns in nsList)
+                {
                     ns.CreateInfos();
                 }
                 //
-                if (csFileList == null || csFileList.Count == 0) {
+                if (csFileList == null || csFileList.Count == 0)
+                {
                     return true;
                 }
                 var parseOpts = new CSharpParseOptions(preprocessorSymbols: csPpList, documentationMode: DocumentationMode.None);
@@ -71,37 +89,48 @@ namespace SData.Compiler {
                     syntaxTrees: csFileList.Select(csFile => CSharpSyntaxTree.ParseText(text: File.ReadAllText(csFile), options: parseOpts, path: csFile)),
                     references: csRefList,
                     options: _csCompilationOptions);
-                if (csRefList != null) {
-                    foreach (var csRef in csRefList) {
-                        if (csRef.Properties.Kind == MetadataImageKind.Assembly) {
+                if (csRefList != null)
+                {
+                    foreach (var csRef in csRefList)
+                    {
+                        if (csRef.Properties.Kind == MetadataImageKind.Assembly)
+                        {
                             var assSymbol = compilation.GetAssemblyOrModuleSymbol(csRef) as IAssemblySymbol;
-                            if (assSymbol != null) {
+                            if (assSymbol != null)
+                            {
                                 CSEX.MapNamespaces(nsInfoMap, assSymbol, true);
                             }
                         }
                     }
                 }
                 var compilationAssSymbol = compilation.Assembly;
-                if (CSEX.MapNamespaces(nsInfoMap, compilationAssSymbol, false) == 0) {
+                if (CSEX.MapNamespaces(nsInfoMap, compilationAssSymbol, false) == 0)
+                {
                     return true;
                 }
-                foreach (var nsInfo in nsInfoMap.Values) {
-                    if (nsInfo.DottedName == null) {
+                foreach (var nsInfo in nsInfoMap.Values)
+                {
+                    if (nsInfo.DottedName == null)
+                    {
                         CompilerContext.ErrorAndThrow(new DiagMsgEx(DiagCodeEx.SchemaNamespaceAttributeRequired, nsInfo.Uri), default(TextSpan));
                     }
                 }
                 CSEX.MapGlobalTypes(nsInfoMap, compilationAssSymbol.GlobalNamespace);
-                foreach (var nsInfo in nsInfoMap.Values) {
+                foreach (var nsInfo in nsInfoMap.Values)
+                {
                     nsInfo.SetGlobalTypeDottedNames();
                 }
-                foreach (var nsInfo in nsInfoMap.Values) {
+                foreach (var nsInfo in nsInfoMap.Values)
+                {
                     nsInfo.MapGlobalTypeMembers();
                 }
                 var cuAttListSyntaxList = new List<AttributeListSyntax>();
                 var cuMemberSyntaxList = new List<MemberDeclarationSyntax>();
                 var globalTypeMdRefSyntaxList = new List<ExpressionSyntax>();
-                foreach (var nsInfo in nsInfoMap.Values) {
-                    if (!nsInfo.IsRef) {
+                foreach (var nsInfo in nsInfoMap.Values)
+                {
+                    if (!nsInfo.IsRef)
+                    {
                         List<string> dottedPropertyNames;
                         var dottedTypeNames = nsInfo.GetRefData(out dottedPropertyNames);
                         cuAttListSyntaxList.Add(CS.AttributeList("assembly", CSEX.__CompilerSchemaNamespaceAttributeName,
@@ -114,22 +143,17 @@ namespace SData.Compiler {
                     }
                 }
                 var sdataProgramName = CSEX.SDataProgramName(csAssemblyName);
-                //>public sealed class SData_XX : ProgramMd {
-                //>  public static void Initialize() {
-                //>
+                //>public static class SData_XX  {
+                //>  public static void Initialize() { }
+                //>  static SData_XX() {
+                //>     SData.ProgramMd.AddGlobalTypes(new GlobalTypeMd[]{ ... });
                 //>  }
-                //>  private static readonly ProgramMd Instance = new SData_XX();
-                //>  private SData_XX() : base(new GlobalTypeMd[]{ ... }) { }
                 //>}
-                cuMemberSyntaxList.Add(CS.Class(null, CS.PublicSealedTokenList, sdataProgramName, new[] { CSEX.ProgramMdName },
-                    CS.Method(CS.PublicStaticTokenList, CS.VoidType, "Initialize", null, new StatementSyntax[] {
-                        CS.LocalDeclStm(CS.VarIdName, "instance", CS.IdName("Instance"))
-                    }),
-                    CS.Field(CS.PrivateStaticReadOnlyTokenList, CSEX.ProgramMdName, "Instance",
-                        CS.NewObjExpr(CS.IdName(sdataProgramName))),
-                    CS.Constructor(CS.PrivateTokenList, sdataProgramName, null,
-                        CS.ConstructorInitializer(true, CS.NewArrOrNullExpr(CSEX.GlobalTypeMdArrayType, globalTypeMdRefSyntaxList)))
-                    ));
+                cuMemberSyntaxList.Add(CS.Class(null, CS.PublicStaticTokenList, sdataProgramName, null,
+                    CS.Method(CS.PublicStaticTokenList, CS.VoidType, "Initialize", null, null),
+                    CS.Constructor(CS.StaticTokenList, sdataProgramName, null, null,
+                        CS.ExprStm(CS.InvoExpr(CS.MemberAccessExpr(CSEX.ProgramMdExpr, "AddGlobalTypes"),
+                            CS.NewArrOrNullExpr(CSEX.GlobalTypeMdArrayType, globalTypeMdRefSyntaxList))))));
                 csCode = _csGeneratedFileBanner +
                     SyntaxFactory.CompilationUnit(default(SyntaxList<ExternAliasDirectiveSyntax>), default(SyntaxList<UsingDirectiveSyntax>),
                         SyntaxFactory.List(cuAttListSyntaxList), SyntaxFactory.List(cuMemberSyntaxList)).NormalizeWhitespace().ToString();
@@ -137,10 +161,18 @@ namespace SData.Compiler {
                 return true;
             }
             catch (LoadingException) { }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 context.AddDiagnostic(DiagnosticSeverity.Error, (int)DiagCodeEx.InternalCompilerError, "Internal compiler error: " + ex.ToString(), default(TextSpan));
             }
             return false;
+        }
+        static class d
+        {
+            static d()
+            {
+
+            }
         }
 
         private const string _csGeneratedFileBanner = @"//

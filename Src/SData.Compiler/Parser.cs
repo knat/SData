@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using SData.Internal;
 
-namespace SData.Compiler {
-    public static class ParserConstants {
+namespace SData.Compiler
+{
+    public static class ParserConstants
+    {
         public const string AbstractKeyword = "abstract";
         public const string AsKeyword = "as";
         public const string ClassKeyword = "class";
@@ -36,27 +38,35 @@ namespace SData.Compiler {
             //"false"
         };
     }
-    internal sealed class Parser : ParserBase {
+    internal sealed class Parser : ParserBase
+    {
         [ThreadStatic]
         private static Parser _instance;
-        private static Parser Instance {
+        private static Parser Instance
+        {
             get { return _instance ?? (_instance = new Parser()); }
         }
 
-        public static bool Parse(string filePath, TextReader reader, LoadingContext context, out CompilationUnitNode result) {
+        public static bool Parse(string filePath, TextReader reader, LoadingContext context, out CompilationUnitNode result)
+        {
             return Instance.CompilationUnit(filePath, reader, context, out result);
         }
-        private Parser() {
+        private Parser()
+        {
         }
-        private void ErrorAndThrow(DiagMsgEx diagMsg, TextSpan textSpan) {
+        private void ErrorAndThrow(DiagMsgEx diagMsg, TextSpan textSpan)
+        {
             Error((int)diagMsg.Code, diagMsg.GetMessage(), textSpan);
             Throw();
         }
-        private void ErrorAndThrow(DiagMsgEx diagMsg) {
+        private void ErrorAndThrow(DiagMsgEx diagMsg)
+        {
             ErrorAndThrow(diagMsg, GetToken().TextSpan);
         }
-        private bool CompilationUnit(string filePath, TextReader reader, LoadingContext context, out CompilationUnitNode result) {
-            try {
+        private bool CompilationUnit(string filePath, TextReader reader, LoadingContext context, out CompilationUnitNode result)
+        {
+            try
+            {
                 Init(filePath, reader, context);
                 var cu = new CompilationUnitNode();
                 while (Namespace(cu)) ;
@@ -65,14 +75,17 @@ namespace SData.Compiler {
                 return true;
             }
             catch (LoadingException) { }
-            finally {
+            finally
+            {
                 Clear();
             }
             result = null;
             return false;
         }
-        private bool Namespace(CompilationUnitNode cu) {
-            if (Keyword(ParserConstants.NamespaceKeyword)) {
+        private bool Namespace(CompilationUnitNode cu)
+        {
+            if (Keyword(ParserConstants.NamespaceKeyword))
+            {
                 var uri = UriExpected();
                 TokenExpected('{');
                 var ns = new NamespaceNode(uri);
@@ -84,25 +97,34 @@ namespace SData.Compiler {
             }
             return false;
         }
-        private Token UriExpected() {
+        private Token UriExpected()
+        {
             var uri = StringExpected();
-            if (uri.Value == Extensions.SystemUri) {
+            if (uri.Value == Extensions.SystemUri)
+            {
                 ErrorAndThrow(new DiagMsgEx(DiagCodeEx.UriSystemReserved), uri.TextSpan);
             }
             return uri;
         }
-        private bool Import(NamespaceNode ns) {
-            if (Keyword(ParserConstants.ImportKeyword)) {
+        private bool Import(NamespaceNode ns)
+        {
+            if (Keyword(ParserConstants.ImportKeyword))
+            {
                 var uri = UriExpected();
                 var alias = default(Token);
-                if (Keyword(ParserConstants.AsKeyword)) {
+                if (Keyword(ParserConstants.AsKeyword))
+                {
                     alias = NameExpected();
-                    if (alias.Value == "sys") {
+                    if (alias.Value == "sys")
+                    {
                         ErrorAndThrow(new DiagMsgEx(DiagCodeEx.AliasSysReserved), alias.TextSpan);
                     }
-                    if (ns.ImportList.Count > 0) {
-                        foreach (var import in ns.ImportList) {
-                            if (import.Alias == alias) {
+                    if (ns.ImportList.Count > 0)
+                    {
+                        foreach (var import in ns.ImportList)
+                        {
+                            if (import.Alias == alias)
+                            {
                                 ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateNamespaceAlias, alias.Value), alias.TextSpan);
                             }
                         }
@@ -113,13 +135,17 @@ namespace SData.Compiler {
             }
             return false;
         }
-        private bool QualifiableName(out QualifiableNameNode result) {
+        private bool QualifiableName(out QualifiableNameNode result)
+        {
             Token tk;
-            if (Name(out tk)) {
-                if (Token((int)TokenKind.ColonColon)) {
+            if (Name(out tk))
+            {
+                if (Token((int)TokenKind.ColonColon))
+                {
                     result = new QualifiableNameNode(tk, NameExpected());
                 }
-                else {
+                else
+                {
                     result = new QualifiableNameNode(default(Token), tk);
                 }
                 return true;
@@ -127,26 +153,34 @@ namespace SData.Compiler {
             result = default(QualifiableNameNode);
             return false;
         }
-        private QualifiableNameNode QualifiableNameExpected() {
+        private QualifiableNameNode QualifiableNameExpected()
+        {
             QualifiableNameNode qName;
-            if (!QualifiableName(out qName)) {
+            if (!QualifiableName(out qName))
+            {
                 ErrorAndThrow("Qualifiable name expected.");
             }
             return qName;
         }
-        private void CheckDuplicateGlobalType(NamespaceNode ns, Token name) {
-            if (ns.GlobalTypeMap.ContainsKey(name)) {
+        private void CheckDuplicateGlobalType(NamespaceNode ns, Token name)
+        {
+            if (ns.GlobalTypeMap.ContainsKey(name))
+            {
                 ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateGlobalTypeName, name.Value), name.TextSpan);
             }
         }
-        private bool GlobalType(NamespaceNode ns) {
-            if (ClassType(ns)) {
+        private bool GlobalType(NamespaceNode ns)
+        {
+            if (ClassType(ns))
+            {
                 return true;
             }
             return EnumType(ns);
         }
-        private bool EnumType(NamespaceNode ns) {
-            if (Keyword(ParserConstants.EnumKeyword)) {
+        private bool EnumType(NamespaceNode ns)
+        {
+            if (Keyword(ParserConstants.EnumKeyword))
+            {
                 var name = NameExpected();
                 CheckDuplicateGlobalType(ns, name);
                 KeywordExpected(ParserConstants.AsKeyword);
@@ -160,10 +194,13 @@ namespace SData.Compiler {
             }
             return false;
         }
-        private bool EnumTypeMember(EnumTypeNode en) {
+        private bool EnumTypeMember(EnumTypeNode en)
+        {
             Token name;
-            if (Name(out name)) {
-                if (en.MemberMap.ContainsKey(name)) {
+            if (Name(out name))
+            {
+                if (en.MemberMap.ContainsKey(name))
+                {
                     ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicateEnumMemberName, name.Value), name.TextSpan);
                 }
                 TokenExpected('=');
@@ -172,33 +209,43 @@ namespace SData.Compiler {
             }
             return false;
         }
-        private bool ClassType(NamespaceNode ns) {
-            if (Keyword(ParserConstants.ClassKeyword)) {
+        private bool ClassType(NamespaceNode ns)
+        {
+            if (Keyword(ParserConstants.ClassKeyword))
+            {
                 var name = NameExpected();
                 CheckDuplicateGlobalType(ns, name);
                 Token abstractOrSealed;
-                if (!Keyword(ParserConstants.AbstractKeyword, out abstractOrSealed)) {
+                if (!Keyword(ParserConstants.AbstractKeyword, out abstractOrSealed))
+                {
                     Keyword(ParserConstants.SealedKeyword, out abstractOrSealed);
                 }
                 var baseClassQName = default(QualifiableNameNode);
-                if (Keyword(ParserConstants.ExtendsKeyword)) {
+                if (Keyword(ParserConstants.ExtendsKeyword))
+                {
                     baseClassQName = QualifiableNameExpected();
                 }
                 List<KeyNode> keyList = null;
-                if (Keyword(ParserConstants.KeyKeyword)) {
+                if (Keyword(ParserConstants.KeyKeyword))
+                {
                     keyList = new List<KeyNode>();
-                    while (true) {
+                    while (true)
+                    {
                         var key = new KeyNode { NameExpected() };
-                        while (true) {
-                            if (Token('.')) {
+                        while (true)
+                        {
+                            if (Token('.'))
+                            {
                                 key.Add(NameExpected());
                             }
-                            else {
+                            else
+                            {
                                 break;
                             }
                         }
                         keyList.Add(key);
-                        if (!Token(',')) {
+                        if (!Token(','))
+                        {
                             break;
                         }
                     }
@@ -212,10 +259,13 @@ namespace SData.Compiler {
             }
             return false;
         }
-        private bool Property(NamespaceNode ns, ClassTypeNode cls) {
+        private bool Property(NamespaceNode ns, ClassTypeNode cls)
+        {
             Token name;
-            if (Name(out name)) {
-                if (cls.PropertyMap.ContainsKey(name)) {
+            if (Name(out name))
+            {
+                if (cls.PropertyMap.ContainsKey(name))
+                {
                     ErrorAndThrow(new DiagMsgEx(DiagCodeEx.DuplicatePropertyName, name.Value), name.TextSpan);
                 }
                 KeywordExpected(ParserConstants.AsKeyword);
@@ -226,52 +276,66 @@ namespace SData.Compiler {
             return false;
         }
         [Flags]
-        private enum LocalTypeFlags {
+        private enum LocalTypeFlags
+        {
             GlobalTypeRef = 1,
             Nullable = 2,
             List = 4,
             Set = 8,
             Map = 16,
         }
-        private LocalTypeNode LocalTypeExpected(NamespaceNode ns, LocalTypeFlags flags) {
+        private LocalTypeNode LocalTypeExpected(NamespaceNode ns, LocalTypeFlags flags)
+        {
             LocalTypeNode type;
-            if (!LocalType(ns, flags, out type)) {
+            if (!LocalType(ns, flags, out type))
+            {
                 ErrorAndThrow(new DiagMsgEx(DiagCodeEx.SpecificTypeExpected, flags.ToString()));
             }
             return type;
         }
-        private bool LocalType(NamespaceNode ns, LocalTypeFlags flags, out LocalTypeNode result) {
-            if ((flags & LocalTypeFlags.Nullable) != 0) {
+        private bool LocalType(NamespaceNode ns, LocalTypeFlags flags, out LocalTypeNode result)
+        {
+            if ((flags & LocalTypeFlags.Nullable) != 0)
+            {
                 NullableTypeNode r;
-                if (NullableType(ns, out r)) {
+                if (NullableType(ns, out r))
+                {
                     result = r;
                     return true;
                 }
             }
-            if ((flags & LocalTypeFlags.List) != 0) {
+            if ((flags & LocalTypeFlags.List) != 0)
+            {
                 ListOrSetTypeNode r;
-                if (ListType(ns, out r)) {
+                if (ListType(ns, out r))
+                {
                     result = r;
                     return true;
                 }
             }
-            if ((flags & LocalTypeFlags.Set) != 0) {
+            if ((flags & LocalTypeFlags.Set) != 0)
+            {
                 ListOrSetTypeNode r;
-                if (SetType(ns, out r)) {
+                if (SetType(ns, out r))
+                {
                     result = r;
                     return true;
                 }
             }
-            if ((flags & LocalTypeFlags.Map) != 0) {
+            if ((flags & LocalTypeFlags.Map) != 0)
+            {
                 MapTypeNode r;
-                if (MapType(ns, out r)) {
+                if (MapType(ns, out r))
+                {
                     result = r;
                     return true;
                 }
             }
-            if ((flags & LocalTypeFlags.GlobalTypeRef) != 0) {
+            if ((flags & LocalTypeFlags.GlobalTypeRef) != 0)
+            {
                 GlobalTypeRefNode r;
-                if (GlobalTypeRef(ns, out r)) {
+                if (GlobalTypeRef(ns, out r))
+                {
                     result = r;
                     return true;
                 }
@@ -279,9 +343,11 @@ namespace SData.Compiler {
             result = null;
             return false;
         }
-        private bool NullableType(NamespaceNode ns, out NullableTypeNode result) {
+        private bool NullableType(NamespaceNode ns, out NullableTypeNode result)
+        {
             Token tk;
-            if (Keyword(ParserConstants.NullableKeyword, out tk)) {
+            if (Keyword(ParserConstants.NullableKeyword, out tk))
+            {
                 TokenExpected('<');
                 var element = (NonNullableTypeNode)LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef | LocalTypeFlags.List | LocalTypeFlags.Set | LocalTypeFlags.Map);
                 TokenExpected('>');
@@ -291,18 +357,22 @@ namespace SData.Compiler {
             result = null;
             return false;
         }
-        private bool GlobalTypeRef(NamespaceNode ns, out GlobalTypeRefNode result) {
+        private bool GlobalTypeRef(NamespaceNode ns, out GlobalTypeRefNode result)
+        {
             QualifiableNameNode qName;
-            if (QualifiableName(out qName)) {
+            if (QualifiableName(out qName))
+            {
                 result = new GlobalTypeRefNode(ns, qName.TextSpan, qName);
                 return true;
             }
             result = null;
             return false;
         }
-        private bool ListType(NamespaceNode ns, out ListOrSetTypeNode result) {
+        private bool ListType(NamespaceNode ns, out ListOrSetTypeNode result)
+        {
             Token tk;
-            if (Keyword(ParserConstants.ListKeyword, out tk)) {
+            if (Keyword(ParserConstants.ListKeyword, out tk))
+            {
                 TokenExpected('<');
                 var item = LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef | LocalTypeFlags.Nullable | LocalTypeFlags.List | LocalTypeFlags.Set | LocalTypeFlags.Map);
                 TokenExpected('>');
@@ -312,9 +382,11 @@ namespace SData.Compiler {
             result = null;
             return false;
         }
-        private bool SetType(NamespaceNode ns, out ListOrSetTypeNode result) {
+        private bool SetType(NamespaceNode ns, out ListOrSetTypeNode result)
+        {
             Token tk;
-            if (Keyword(ParserConstants.SetKeyword, out tk)) {
+            if (Keyword(ParserConstants.SetKeyword, out tk))
+            {
                 TokenExpected('<');
                 var item = (GlobalTypeRefNode)LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef);
                 TokenExpected('>');
@@ -324,9 +396,11 @@ namespace SData.Compiler {
             result = null;
             return false;
         }
-        private bool MapType(NamespaceNode ns, out MapTypeNode result) {
+        private bool MapType(NamespaceNode ns, out MapTypeNode result)
+        {
             Token tk;
-            if (Keyword(ParserConstants.MapKeyword, out tk)) {
+            if (Keyword(ParserConstants.MapKeyword, out tk))
+            {
                 TokenExpected('<');
                 var key = (GlobalTypeRefNode)LocalTypeExpected(ns, LocalTypeFlags.GlobalTypeRef);
                 TokenExpected(',');

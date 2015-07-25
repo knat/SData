@@ -7,8 +7,10 @@ using Microsoft.VisualStudio.Language.StandardClassification;
 using SData.Compiler;
 using SData.MSBuild;
 
-namespace SData.VisualStudio.Editors {
-    internal static class ContentTypeDefinitions {
+namespace SData.VisualStudio.Editors
+{
+    internal static class ContentTypeDefinitions
+    {
         //
         internal const string SDataSchemaContentType = "SDataSchema";
         internal const string SDataSchemaFileExtension = ".sds";
@@ -20,26 +22,32 @@ namespace SData.VisualStudio.Editors {
 
     [Export(typeof(IClassifierProvider)),
         ContentType(ContentTypeDefinitions.SDataSchemaContentType)]
-    internal sealed class LanguageClassifierProvider : IClassifierProvider {
+    internal sealed class LanguageClassifierProvider : IClassifierProvider
+    {
         [Import]
         internal IStandardClassificationService StandardService = null;
-        public IClassifier GetClassifier(ITextBuffer textBuffer) {
+        public IClassifier GetClassifier(ITextBuffer textBuffer)
+        {
             return textBuffer.Properties.GetOrCreateSingletonProperty<LanguageClassifier>(
                 () => new LanguageClassifier(textBuffer, StandardService));
         }
     }
-    internal sealed class LanguageClassifier : LanguageClassifierBase {
+    internal sealed class LanguageClassifier : LanguageClassifierBase
+    {
         internal LanguageClassifier(ITextBuffer textBuffer, IStandardClassificationService standardService)
-            : base(textBuffer, standardService, ParserConstants.KeywordSet) {
+            : base(textBuffer, standardService, ParserConstants.KeywordSet)
+        {
         }
     }
     //
     //
     [Export(typeof(ITaggerProvider)), TagType(typeof(IErrorTag)),
         ContentType(ContentTypeDefinitions.SDataSchemaContentType)]
-    internal sealed class LanguageErrorTaggerProvider : LanguageErrorTaggerProviderBase {
+    internal sealed class LanguageErrorTaggerProvider : LanguageErrorTaggerProviderBase
+    {
         internal LanguageErrorTaggerProvider()
-            : base(DiagStore.FileName, DiagStore.TryLoad) {
+            : base(DiagStore.FileName, DiagStore.TryLoad)
+        {
         }
     }
 

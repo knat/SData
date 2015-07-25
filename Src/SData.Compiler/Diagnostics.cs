@@ -1,7 +1,9 @@
 ﻿using System;
 
-namespace SData.Compiler {
-    internal enum DiagCodeEx {
+namespace SData.Compiler
+{
+    internal enum DiagCodeEx
+    {
         None = 0,
         InternalCompilerError = -900,
         //
@@ -59,19 +61,24 @@ namespace SData.Compiler {
 
 
     }
-    internal struct DiagMsgEx {
-        public DiagMsgEx(DiagCodeEx code) {
+    internal struct DiagMsgEx
+    {
+        public DiagMsgEx(DiagCodeEx code)
+        {
             Code = code;
             _msgArgs = null;
         }
-        public DiagMsgEx(DiagCodeEx code, params string[] msgArgs) {
+        public DiagMsgEx(DiagCodeEx code, params string[] msgArgs)
+        {
             Code = code;
             _msgArgs = msgArgs;
         }
         public readonly DiagCodeEx Code;
         private readonly string[] _msgArgs;
-        public string GetMessage() {
-            switch (Code) {
+        public string GetMessage()
+        {
+            switch (Code)
+            {
                 //
                 case DiagCodeEx.AliasSysReserved:
                     return "Alias 'sys' is reserved.";
