@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+    <metadata minClientVersion="2.8.1">
+        <id>SData</id>
+        <version>0.7.0-alpha1</version>
+        <title>SData Runtime Library</title>
+        <authors>谭克(Tank)</authors>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>This is the SData runtime library for .NET Framework 4.5, Windows 8, Windows Phone 8.1 and Windows Phone Silverlight 8. Visit https://github.com/knat/SData for more information.</description>
+        <projectUrl>https://github.com/knat/SData</projectUrl>
+        <licenseUrl>https://github.com/knat/SData/blob/master/License.txt</licenseUrl>
+        <tags>SData</tags>
+    </metadata>
+    <files>
+        <file src="..\SData\bin\Release\SData.dll" target="lib\portable-net45+win8+wp8+wpa81\SData.dll" />
+    </files>
+</package>
