@@ -151,7 +151,8 @@ PM> Install-Package SData -Pre
 //Program.cs
 using SData;
 
-[assembly: SchemaNamespace("http://example.com/business"/*schema namespace URI*/, "Example.Business"/*C# namespace name*/)]
+[assembly: SchemaNamespace("http://example.com/business"/*schema namespace URI*/,
+                            "Example.Business"/*C# namespace name*/)]
 //all schema namespaces must be mapped
 [assembly: SchemaNamespace("http://example.com/business/api", "Example.Business.API")]
 ```
@@ -172,15 +173,18 @@ namespace Example.Business
         public DateTimeOffset? RegDate { get; set; }
         public Dictionary<string, object> __UnknownProperties { get; set; }
         //try to load and validate data
-        public static bool TryLoad(string filePath/*it's just an identifier*/, TextReader reader/*data source!*/, SData.LoadingContext context, out Person result)
+        public static bool TryLoad(string filePath /*it's just an identifier*/,
+            TextReader reader/*data source!*/, SData.LoadingContext context, out Person result)
         {
             //...
         }
-        public void Save(TextWriter writer, string indentString = "\t", string newLineString = "\n")
+        public void Save(TextWriter writer, string indentString = "\t",
+            string newLineString = "\n")
         {
             //...
         }
-        public void Save(StringBuilder stringBuilder, string indentString = "\t", string newLineString = "\n")
+        public void Save(StringBuilder stringBuilder, string indentString = "\t",
+            string newLineString = "\n")
         {
             //...
         }
@@ -210,7 +214,8 @@ namespace Example.Business
     {
         public int Reputation { get; set; }
         public HashSet<Order> Orders { get; set; }
-        public static bool TryLoad(string filePath, TextReader reader, LoadingContext context, out Customer result)
+        public static bool TryLoad(string filePath, TextReader reader,
+            LoadingContext context, out Customer result)
         {
             //...
         }
@@ -221,7 +226,8 @@ namespace Example.Business
     {
         public string BankAccount { get; set; }
         public Dictionary<int, string> Products { get; set; }
-        public static bool TryLoad(string filePath, TextReader reader, LoadingContext context, out Supplier result)
+        public static bool TryLoad(string filePath, TextReader reader,
+            LoadingContext context, out Supplier result)
         {
             //...
         }
@@ -237,15 +243,18 @@ namespace Example.Business.API
         public HashSet<Person> People { get; set; }
         public SData.Binary ETag { get; set; }
         public Dictionary<string, object> __UnknownProperties { get; set; }
-        public static bool TryLoad(string filePath, TextReader reader/*data source!*/, SData.LoadingContext context, out DataSet result)
+        public static bool TryLoad(string filePath, TextReader reader,
+            SData.LoadingContext context, out DataSet result)
         {
             //...
         }
-        public void Save(TextWriter writer, string indentString = "\t", string newLineString = "\n")
+        public void Save(TextWriter writer, string indentString = "\t",
+            string newLineString = "\n")
         {
             //...
         }
-        public void Save(StringBuilder stringBuilder, string indentString = "\t", string newLineString = "\n")
+        public void Save(StringBuilder stringBuilder, string indentString = "\t",
+            string newLineString = "\n")
         {
             //...
         }
@@ -254,7 +263,8 @@ namespace Example.Business.API
 }       
         
 public static class SData_ConsoleApplication1
-//if the assembly name is 'MyCompany.MyProject', this class name will be 'SData_MyCompany_MyProject'
+//if the assembly name is 'MyCompany.MyProject', this class name will be
+//  'SData_MyCompany_MyProject'
 {
     public static void Initialize() { }//Initialize the metadata
     //...
@@ -353,6 +363,7 @@ byte[] by2 = bin2.ToBytes();
 
 About `SData.LoadingContext` and diagnostics:
 
+```C#
 namespace SData
 {
     public class LoadingContext
@@ -383,6 +394,7 @@ namespace SData
         //...
     }
 }
+```
 
 3) Copy the following C# code into Program.cs:
 
@@ -451,7 +463,8 @@ class Program
         var context = new LoadingContext();
         using (var reader = new StreamReader("DataSet.txt"))
         {
-            if (!DataSet.TryLoad("**DataSet.txt**"/*it's just an identifier*/, reader, context, out result))
+            if (!DataSet.TryLoad("**DataSet.txt**"/*it's just an identifier*/, reader,
+                context, out result))
             {
                 foreach (var diag in context.DiagnosticList)
                 {
@@ -526,13 +539,14 @@ namespace Example.Business
             Console.WriteLine("Person.OnLoaded()");
             if (Phones.Count == 0)
             {
-                context.AddDiagnostic(DiagnosticSeverity.Error, (int)MyDiagnosticCode.PhonesIsEmpty, "Phones is empty.", textSpan);
-                //if error diagnostics are added to the context, the method must return false.
-                //if any OnLoading() or OnLoaded() returns false, TryLoad() will return false immediately 
+                context.AddDiagnostic(DiagnosticSeverity.Error,
+                    (int)MyDiagnosticCode.PhonesIsEmpty, "Phones is empty.", textSpan);
                 return false;
             }
             return true;
         }
+        //if error diagnostics are added to the context, the method must return false.
+        //if any OnLoading() or OnLoaded() returns false, TryLoad() will return false immediately 
     }
     partial class Customer
     {
@@ -594,9 +608,9 @@ namespace Example.Business
         {
             get { return _phones ?? (_phones = new Collection<string>()); }
         }
-        //list<T> can be mapped to System.Collections.Generic.ICollection<T> or implementing class
-        //set<T> can be mapped to System.Collections.Generic.ISet<T> or implementing class
-        //map<TKey, TValue> can be mapped to System.Collections.Generic.IDictionary<TKey, TValue> or implementing class
+//list<T> can be mapped to System.Collections.Generic.ICollection<T> or implementing class
+//set<T> can be mapped to System.Collections.Generic.ISet<T> or implementing class
+//map<TKey, TValue> can be mapped to System.Collections.Generic.IDictionary<TKey, TValue> or implementing class
     }
 
     //same-named schema class and C# class are mapped implicitly
