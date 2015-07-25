@@ -388,7 +388,8 @@ namespace SData
 
     public struct Diagnostic
     {
-        public Diagnostic(DiagnosticSeverity severity, int code, string message, TextSpan textSpan);
+        public Diagnostic(DiagnosticSeverity severity, int code, string message,
+            TextSpan textSpan);
         public readonly DiagnosticSeverity Severity;
         public readonly int Code;
         public readonly string Message;
