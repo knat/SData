@@ -165,16 +165,16 @@ In building the project, after checking the correctness of schema files, the sch
 namespace Example.Business
 {
     //keyed schema class will implement IEquatable<T>
-    public abstract partial class Person/*same name as schema class*/ : IEquatable<Person>
+    public abstract partial class Person : IEquatable<Person>
     {
-        public int Id/*same name as schema property*/ { get; set; }
+        public int Id { get; set; }
         public string Name { get; set; }
         public List<string> Phones { get; set; }
         public DateTimeOffset? RegDate { get; set; }
         public Dictionary<string, object> __UnknownProperties { get; set; }
         //try to load and validate data
-        public static bool TryLoad(string filePath /*it's just an identifier*/,
-            TextReader reader/*data source!*/, SData.LoadingContext context, out Person result)
+        public static bool TryLoad(string filePath, //filePath is just an identifier
+            TextReader reader, SData.LoadingContext context, out Person result)
         {
             //...
         }
@@ -200,9 +200,9 @@ namespace Example.Business
         //...
     }
 
-    public static partial class Reputation//same name as schema enum
+    public static partial class Reputation
     {
-        public const int/*enum underlying type*/ None = 0;
+        public const int None = 0;
         public const int Bronze = 1;
         public const int Silver = 2;
         public const int Gold = 3;
@@ -244,7 +244,7 @@ namespace Example.Business.API
         public SData.Binary ETag { get; set; }
         public Dictionary<string, object> __UnknownProperties { get; set; }
         public static bool TryLoad(string filePath, TextReader reader,
-            SData.LoadingContext context, out DataSet result)
+            LoadingContext context, out DataSet result)
         {
             //...
         }
@@ -294,17 +294,18 @@ Type mapping table:
 | Guid | System.Guid |
 | TimeSpan | System.TimeSpan |
 | DateTimeOffset | System.DateTimeOffset |
-| nullable<T> | System.Nullable<T>(if T is CLR value type) or T(if T is CLR ref type) |
-| list<T> | System.Collections.Generic.List<T> |
-| set<T> | System.Collections.Generic.HashSet<T> |
-| map<TKey, TValue> | System.Collections.Generic.Dictionary<TKey, TValue> |
+| `nullable<T>` | `System.Nullable<T>`(if T is CLR value type) or T(if T is CLR ref type) |
+| `list<T>` | `System.Collections.Generic.List<T>` |
+| `set<T>` | `System.Collections.Generic.HashSet<T>` |
+| `map<TKey, TValue>` | `System.Collections.Generic.Dictionary<TKey, TValue>` |
 
 `SData.IgnoreCaseString` is a wrapper of `string`:
 
 ```C#
 namespace SData
 {
-    public sealed class IgnoreCaseString : IEquatable<IgnoreCaseString>, IComparable<IgnoreCaseString>
+    public sealed class IgnoreCaseString : IEquatable<IgnoreCaseString>,
+        IComparable<IgnoreCaseString>
     {
         public IgnoreCaseString(string value, bool isReadOnly = false);
         public static implicit operator IgnoreCaseString(string value);
@@ -372,7 +373,8 @@ namespace SData
         public readonly List<Diagnostic> DiagnosticList;
         public bool HasDiagnostics { get; }
         public bool HasErrorDiagnostics { get; }
-        public void AddDiagnostic(DiagnosticSeverity severity, int code, string message, TextSpan textSpan);
+        public void AddDiagnostic(DiagnosticSeverity severity, int code, string message,
+            TextSpan textSpan);
         public virtual void Reset();
     }
 
@@ -463,8 +465,8 @@ class Program
         var context = new LoadingContext();
         using (var reader = new StreamReader("DataSet.txt"))
         {
-            if (!DataSet.TryLoad("**DataSet.txt**"/*it's just an identifier*/, reader,
-                context, out result))
+            if (!DataSet.TryLoad("**DataSet.txt**", //it's just an identifier
+                reader, context, out result))
             {
                 foreach (var diag in context.DiagnosticList)
                 {
@@ -544,9 +546,9 @@ namespace Example.Business
                 return false;
             }
             return true;
+//if error diagnostics are added to the context, the method must return false.
+//if any OnLoading() or OnLoaded() returns false, TryLoad() will return false immediately 
         }
-        //if error diagnostics are added to the context, the method must return false.
-        //if any OnLoading() or OnLoaded() returns false, TryLoad() will return false immediately 
     }
     partial class Customer
     {
@@ -563,8 +565,10 @@ namespace Example.Business
             var myContext = (MyLoadingContext)context;
             if (myContext.CheckCustomerReputation && Reputation == Business.Reputation.Bad)
             {
-                context.AddDiagnostic(DiagnosticSeverity.Warning, (int)MyDiagnosticCode.BadReputationCustomer, "Bad reputation customer.", textSpan);
-                //if non-error diagnostics are added to the context, the method should return true.
+                context.AddDiagnostic(DiagnosticSeverity.Warning,
+                    (int)MyDiagnosticCode.BadReputationCustomer, "Bad reputation customer.",
+                    textSpan);
+//if non-error diagnostics are added to the context, the method should return true.
             }
             return true;
         }
@@ -610,7 +614,8 @@ namespace Example.Business
         }
 //list<T> can be mapped to System.Collections.Generic.ICollection<T> or implementing class
 //set<T> can be mapped to System.Collections.Generic.ISet<T> or implementing class
-//map<TKey, TValue> can be mapped to System.Collections.Generic.IDictionary<TKey, TValue> or implementing class
+//map<TKey, TValue> can be mapped to System.Collections.Generic.IDictionary<TKey, TValue>
+//  or implementing class
     }
 
     //same-named schema class and C# class are mapped implicitly
