@@ -173,8 +173,8 @@ namespace Example.Business
         public DateTimeOffset? RegDate { get; set; }
         public Dictionary<string, object> __UnknownProperties { get; set; }
         //try to load and validate data
-        public static bool TryLoad(string filePath, //filePath is just an identifier
-            TextReader reader, SData.LoadingContext context, out Person result)
+        public static bool TryLoad(string filePath/*it's just an identifier*/, 
+            TextReader reader/*data source!*/, SData.LoadingContext context, out Person result)
         {
             //...
         }
@@ -275,7 +275,7 @@ Type mapping table:
 
 | Schema Type | CLR Type | 
 | ---- | ---- |
-| String | System.string |
+| String | System.String |
 | IgnoreCaseString | SData.IgnoreCaseString |
 | Char | System.Char |
 | Decimal | System.Decimal |
@@ -551,6 +551,7 @@ namespace Example.Business
 //if any OnLoading() or OnLoaded() returns false, TryLoad() will return false immediately 
         }
     }
+
     partial class Customer
     {
         //the serializer will call base method(Person.OnLoading()) first
@@ -587,7 +588,7 @@ namespace Example.Business
             //...
 ```
 
-6) Use `SData.SchemaClassAttribute` to map schema class to C# class explicitly, use `SData.SchemaPropertyAttribute` to map schema property and C# property/field explicitly. The schema compiler is aware of these attributes.
+6) Use `SData.SchemaClassAttribute` to map schema class to C# class explicitly, use `SData.SchemaPropertyAttribute` to map schema property to C# property/field explicitly. The schema compiler is aware of these attributes.
 
 ```C#
 //my.cs
@@ -638,7 +639,7 @@ namespace Example.Business.API
 
 `SData.SchemaNamespaceAttribute`, `SData.SchemaClassAttribute` and `SData.SchemaPropertyAttribute` are compile-time attributes, they have nothing to do with runtime. Yeah, welcome to the metaprogramming world.
 
-7) Suppose Biz.sds is implemented in assembly ClassLibrary1, some months later, VipCustomer is added:
+7) Suppose Biz.sds is mapped in assembly ClassLibrary1, some months later, Administrator is added:
 
 ```
 //Biz2.sds
@@ -647,9 +648,9 @@ namespace "http://example.com/business2"
 {
 	import "http://example.com/business"
 
-    class VipCustomer extends Customer
+    class Administrator extends Person
     {
-        VipCode as String
+        //...
     }
 }
 ```
@@ -665,3 +666,214 @@ In project ClassLibrary2, both Biz.sds and Biz2.sds are added to it. Can we reus
 The MIT License.
 
 ## Questions, suggestions or contributions are welcomed
+
+## Appendix A: Lexical grammar of data
+
+```
+white-space:
+unicode-category-Zs | '\u0009' | '\u000B' | '\u000C'
+;
+new-line:
+'\u000D' | '\u000A' | '\u0085' | '\u2028' | '\u2029'
+;
+white-space-or-new-line-token:
+(white-space | new-line)+
+;
+single-line-comment-token:
+'//' (!new-line)*
+;
+delimited-comment-token:
+'/*' (!'*/')* '*/'
+; 
+name-token:
+normal-name-token | verbatim-name-token
+;
+verbatim-name-token:
+'@' normal-name-token
+;
+normal-name-token:
+name-start-char name-part-char*
+;
+name-start-char:
+letter-char | '_'
+;
+name-part-char:
+letter-char | decimal-digit-char | connecting-char | combining-char | formatting-char
+;
+letter-char:
+unicode-category-Lu-Ll-Lt-Lm-Lo-Nl
+;
+decimal-digit-char:
+unicode-category-Nd
+;
+connecting-char:
+unicode-category-Pc
+;
+combining-char:
+unicode-category-Mn-Mc
+;
+formatting-char:
+unicode-category-Cf
+;
+string-value-token:
+normal-string-value-token | verbatim-string-value-token
+;
+normal-string-value-token:
+'"' normal-string-value-char* '"'
+;
+normal-string-value-char:
+!('"' | '\\' | new-line) | simple-escape-sequence | unicode-escape-sequence
+;
+simple-escape-sequence:
+'\\' ('\'' | '"' | '\\' | '0' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v')
+;
+unicode-escape-sequence:
+'\\u' hex-digit hex-digit hex-digit hex-digit
+;
+hex-digit:
+'0'..'9' | 'A'..'F' | 'a'..'f'
+;
+verbatim-string-value-token:
+'@"' (!'"' | '""')* '"'
+;
+char-value-token:
+'\'' char-value-char '\''
+;
+char-value-char:
+!('\'' | '\\' | new-line) | simple-escape-sequence | unicode-escape-sequence
+;
+integer-value-token:
+('+' | '-')? decimal-digit+
+;
+decimal-digit:
+'0'..'9'
+;
+decimal-value-token:
+('+' | '-')? decimal-digit* '.' decimal-digit+
+;
+real-value-token:
+('+' | '-')? (decimal-digit* '.')? decimal-digit+ ('E' | 'e') ('+' | '-')? decimal-digit+
+;
+hash-open-bracket-token:
+'#['
+;
+colon-colon-token:
+'::'
+;
+character-token:
+a-single-character-not-recognized-by-the-above-rules
+;
+```
+
+## Appendix B: Parsing grammar of data
+
+```
+parsing-unit:
+class-value
+;
+class-value:
+alias-uri-list? type-indicator? '{' (property (',' property)* ','?)? '}'
+;
+alias-uri-list:
+'<' (alias-uri (',' alias-uri)* ','?)? '>'
+;
+alias-uri:
+name-token '=' string-value-token
+;
+type-indicator:
+'(' qualified-name ')'
+;
+qualified-name:
+name-token colon-colon-token name-token
+;
+property:
+name-token '=' value
+;
+value:
+null-value | atom-value | enum-value | list-or-set-value | map-value | class-value
+;
+null-value:
+'null'
+;
+atom-value:
+string-value-token | char-value-token | integer-value-token | decimal-value-token
+    | real-value-token | 'true' | 'false'
+;
+enum-value:
+qualified-name '.' name-token
+;
+list-or-set-value:
+'[' (value (',' value)* ',')? ']'
+;
+map-value:
+hash-open-bracket-token (key-value (',' key-value)* ','?)? ']'
+;
+key-value:
+value '=' value
+;
+```
+
+## Appendix C: Lexical grammar of schema
+
+Same as lexical grammar of data.
+
+## Appendix D: Parsing grammar of schema
+
+```
+compilation-unit:
+namespace*
+;
+namespace:
+'namespace' string-value-token '{' import* global-type* '}'
+;
+import:
+'import' string-value-token ('as' name-token)?
+;
+qualifiable-name:
+(name-token colon-colon-token)? name-token
+;
+global-type:
+class-type | enum-type
+;
+enum-type:
+'enum' name-token 'as' qualifiable-name '{' enum-member* '}'
+;
+enum-member:
+name-token '=' atom-value
+;
+atom-value:
+string-value-token | char-value-token | integer-value-token | decimal-value-token
+    | real-value-token | 'true' | 'false'
+;
+class-type:
+'class' name-token ('abstract' | 'sealed')? ('extends' qualifiable-name)?
+    ('key' key (',' key)*)? '{' property* '}'
+;
+key:
+name-token ('.' name-token)*
+;
+property:
+name-token 'as' local-type
+;
+local-type:
+nullable-type | non-nullable-type
+;
+nullable-type:
+'nullable' '<' non-nullable-type '>'
+;
+non-nullable-type:
+global-type-ref | list-type | set-type | map-type
+;
+global-type-ref:
+qualifiable-name
+;
+list-type:
+'list' '<' local-type '>'
+;
+set-type:
+'set' '<' global-type-ref '>'
+;
+map-type:
+'map' '<' global-type-ref ',' local-type '>'
+;
+```
