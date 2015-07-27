@@ -496,9 +496,14 @@ namespace Example.Business
 {
     partial class Person : SomeClass, ISomeInterface
     {
-        //NOTE: parameterless constructor is required.
         public int MyProperty { get; set; }
-        public void MyMethod() { }
+        public virtual void MyMethod() { }
+    }
+
+    partial class Customer
+    {
+        //NOTE: parameterless constructor is required for non-abstract class.
+        public override void MyMethod() { }
     }
 }
 ```
