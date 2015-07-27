@@ -497,7 +497,7 @@ namespace Example.Business
     partial class Person : SomeClass, ISomeInterface
     {
         public int MyProperty { get; set; }
-        public virtual void MyMethod() { }
+        public abstract void MyMethod();
     }
 
     partial class Customer
