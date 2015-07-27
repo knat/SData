@@ -1,4 +1,4 @@
-﻿SData is an elegant data interchange solution. It contains three parts: schema language, data format and programming language mapping.
+﻿SData is an elegant data interchange solution. It has three parts: schema language, data format and programming language mapping.
 
 ## Schema Language
 
@@ -288,7 +288,7 @@ Type mapping table:
 | UInt16 | System.UInt16 |
 | Byte | System.Byte |
 | Double | System.Double |
-| Single | System.single |
+| Single | System.Single |
 | Boolean | System.Boolean |
 | Binary | SData.Binary |
 | Guid | System.Guid |
