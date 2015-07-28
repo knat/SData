@@ -56,7 +56,7 @@ Atom type table:
 
 1) [Visual Studio 2015](http://www.visualstudio.com/downloads/download-visual-studio-vs) is required.
 
-2) Download and install the latest [SData VSIX package (SData-*.vsix)](https://github.com/knat/SData/releases).
+2) Download and install the latest [SData VSIX package(SData-*.vsix)](https://github.com/knat/SData/releases).
 
 3) Open VS 2015, create or open a C# project, unload and edit the .csproj file, insert the following code at the end of the file:
 
@@ -160,7 +160,7 @@ using SData;
 In building the project, after checking the correctness of schema files, the schema compiler will analyze C# files and generate the following C# code in __SDataGenerated.cs:
 
 ```C#
-//__SDataGenerated.cs, Auto-generated, DO NOT EDIT.
+//__SDataGenerated.cs. Auto-generated, DO NOT EDIT.
 
 namespace Example.Business
 {
