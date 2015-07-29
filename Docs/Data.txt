@@ -1,0 +1,59 @@
+﻿
+//This is the data of schema Biz.sds
+//a data file must contain one and only one class value
+<a0/*alias*/ = "http://example.com/business"/*URI*/, a1 = "http://example.com/business/api">
+{//value of class DataSet
+    ETag/*property name*/ = "AQIDBAUGBwg="/*property value*/,
+    //property order in data can be different than in schema
+    People = [//set value
+        //because Person is abstract, type indicator '(alias::className)' is required to
+        //  indicate the data type. if type indicator is absent, the data type is
+        //  the declared type in schema
+        (a0::Customer) {
+            Id = 1,
+            Name = @"Tank",
+            RegDate = "2015-07-24T15:17:19.4805695+08:00",
+            Phones = [//list value
+                "1234567",
+                "2345678",
+            ],
+            Reputation = a0::Reputation/*enum name*/.Bronze/*member name*/,
+            Orders = [
+                {
+                    Id = 1,
+                    Amount = 436.99,
+                    IsUrgent = true,
+                },
+                {
+                    Id = 2,
+                    Amount = 98.77,
+                    IsUrgent = false,
+                },
+            ],
+        },
+        (a0::Customer) {
+            Id = 2,
+            RegDate = null,//nullable type can accept null value
+            Name = "Mike",
+            Phones = [],//empty list
+            Reputation = 7,//underlying atom value is acceptable
+            UnknownProperty1 = { P1 = [], P2 = true }//unknown property is permitted
+            //nullable property(e.g: Orders) can be omitted, 
+            //   non-nullable property must be present
+        },
+        (a0::Supplier) {
+            Id = 3,
+            Name = "Eric",
+            Phones = [ "7654321" ],
+            BankAccount = "11223344",
+            Products = #[//map value
+                1/*key value*/ = "Mountain Bike"/*value value*/,
+                2 = "Road Bike",
+            ],
+        },
+    ],
+}
+
+
+
+

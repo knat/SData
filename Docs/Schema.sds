@@ -1,0 +1,91 @@
+﻿
+//example.sds, schema file extension is sds
+
+namespace "http://example.com/project1"//a namespace is identified by a URI
+{
+    class Class1 abstract//abstract class cannot have instance
+    {
+        Id/*property name*/ as Int32//property type
+		Name as nullable<String>//nullable type may have null value
+		P1 as list<UInt64/*item*/>//list is an ordered collection
+		P2 as set<Binary/*item*/>//set is an unordered collection,
+								 //  every item must have unique value
+		P3 as map<Int16/*key*/, TimeSpan/*value*/>//map is an unordered key-value
+									//  collection, every key must have unique value
+		P4 as nullable<list<nullable<map<Decimal, nullable<set<Double>>>>>>
+			//set item or map key must be non-nullable and non-collection type
+    }
+
+	//there are 19 predefined atom types: String, IgnoreCaseString, Char, Decimal, 
+	//  Int64, Int32, Int16, SByte, UInt64, UInt32, UInt16, Byte, Double, Single,
+	//  Boolean, Binary, Guid, TimeSpan, DateTimeOffset
+
+	enum Enum1 as Guid//enum underlying type must be atom type
+	{
+		IUnknown/*member name*/ = "00000000-0000-0000-C000-000000000046"//member value
+		//every member in an enum must have a unique name
+		IClassFactory = "00000001-0000-0000-C000-000000000046"
+	    IMalloc = "00000002-0000-0000-C000-000000000046"
+	}
+
+	//atom and enum are simple types, they have equality trait,
+	//  can be used as key type(set item type, map key type, class key type)
+	
+    class Class2 sealed/*sealed class cannot be extended*/ extends Class1//base class
+		key Id, P5//specify one or more properties as class key,
+				  //  key property must have non-nullable and non-collection type
+    {
+		//every property in a class hierarchy must have a unique name
+		P5 as Enum1
+		P6 as list<nullable<Class1>>
+    }
+
+	//keyed class(e.g: Class2) has equality trait, can be used as class key type
+	class Class3 key P1
+	{
+		P1 as Class2
+		P2 as map<Class2, set<Class2>>//keyed class can be used as map key type or
+									  //  set item type
+	}
+
+	class Class4 key P1.P1.Id//multiple-stepped key
+	{
+		P1 as Class3
+	}
+}
+
+//multiple namespaces with a same URI are merged into one logical namespace
+namespace "http://example.com/project1"
+{
+	//in a logical namespace, every member(class or enum) must have a unique name
+}
+
+namespace "http://example.com/project2"
+{
+	//to reference other namespace's members, import is required
+    import "http://example.com/project1"/*namespace URI*/ as p1//URI alias
+
+	class Class1 extends p1/*URI alias*/::Class1//namespace member name
+	{
+		P5 as sys::Int32//reserved alias 'sys' can be used to reference atom types
+	}
+
+	//'alias::name' is qualified name, 'name' is unqualified name
+	class Class2 extends Class1//unqualified name 'Class1' is resolved to
+							   //  '{http://example.com/project2}Class1'
+	{
+		P6 as Class3//unqualified name 'Class3' is resolved to
+							   //  '{http://example.com/project1}Class3'
+	}
+}
+
+namespace "http://example.com/project3"
+{
+    import "http://example.com/project1" as p1
+    import "http://example.com/project2" as p2
+
+	class ClassA extends Class1//ERROR: ambiguous unqualified name 'Class1',
+				 // use qualified name(p1::Class1 or p2::Class1) instead
+	{ }
+}
+
