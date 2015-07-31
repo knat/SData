@@ -1,6 +1,6 @@
-﻿SData is an elegant data interchange solution. It has three parts: schema language, data format and programming language mapping.
+SData is an elegant data interchange solution. It has three parts: schema language, data format and programming language mapping.
 
-Why SData? 1)With schema, a data interchange solution(e.g. Google's Protocol Buffers, Microsoft's Bond, and SData) is statically typed, otherwise dynamically typed(e.g. JSON), statically typed data interchange solutions have better safety and performance but less flexibility, this is the same difference between statically typed programming language and dynamically typed programming language; 2)SData schema is elegant and powerful, it is object-oriented and has rich types, it is designed with programming language mapping in mind, the code generation mechanism is graceful and flexible, programmers may feel at home when using it.
+Why SData? 1)With schema, a data interchange solution(e.g. Google's Protocol Buffers, Microsoft's Bond, and SData) is statically typed, otherwise dynamically typed(e.g. JSON), statically typed data interchange solutions have better safety and performance but less flexibility, this is the same difference between statically typed programming language and dynamically typed programming language; 2)SData schema is elegant and powerful, it is object-oriented and has rich types, it is designed with programming language mapping in mind, the programming language mapping mechanism is graceful and flexible, programmers may feel at home when using SData.
 
 ## Schema Language
 
