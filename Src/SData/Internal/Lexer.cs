@@ -179,6 +179,16 @@ namespace SData.Internal
                 switch (ch)
                 {
                     case char.MaxValue:
+                    case '{':
+                    case '}':
+                    case '[':
+                    case ']':
+                    case '(':
+                    case ')':
+                    case '<':
+                    case '>':
+                    case '=':
+                    case ',':
                         return CreateTokenAndAdvanceChar(ch);
                     case ' ':
                     case '\t':
@@ -340,6 +350,11 @@ namespace SData.Internal
                                 else if (ch == char.MaxValue)
                                 {
                                     ErrorAndThrow("\" expected.");
+                                }
+                                else if (ch == '\r' && GetNextChar() == '\n')
+                                {
+                                    sb.Append("\r\n");
+                                    AdvanceChar(true);
                                 }
                                 else
                                 {
