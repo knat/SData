@@ -149,14 +149,14 @@ namespace SData.Internal
             return new Token((int)tokenKind, value, new TextSpan(_filePath, startIndex, _totalIndex - startIndex,
                 _tokenStartPosition, new TextPosition(_lastLine, _lastColumn)));
         }
-        private TextSpan CreateTextSpan()
+        private TextSpan CreateSingleTextSpan()
         {
             var pos = new TextPosition(_line, _column);
             return new TextSpan(_filePath, _totalIndex, _index < _count ? 1 : 0, pos, pos);
         }
         private Token CreateTokenAndAdvanceChar(char ch)
         {
-            var token = new Token(ch, null, CreateTextSpan());
+            var token = new Token(ch, null, CreateSingleTextSpan());
             AdvanceChar(false);
             return token;
         }
@@ -167,323 +167,218 @@ namespace SData.Internal
         }
         private void ErrorAndThrow(string errMsg)
         {
-            ErrorAndThrow(errMsg, CreateTextSpan());
-        }
-        private enum State : byte
-        {
-            None = 0,
-            //InWhitespaceOrNewLine,
-            InSingleLineComment,
-            InDelimitedComment,
-            InNormalName,
-            InVerbatimName,
-            InNormalString,
-            InVerbatimString,
-            InChar,
-            InNumberInteger,
-            InNumberFraction,
-            InNumberExponent,
+            ErrorAndThrow(errMsg, CreateSingleTextSpan());
         }
         public Token GetToken()
         {
-            var state = State.None;
-            StringBuilder sb = null;
+            char ch, nextch;
+            StringBuilder sb;
             while (true)
             {
-                var ch = GetChar();
-                switch (state)
+                ch = GetChar();
+                switch (ch)
                 {
-                    case State.None:
-                        switch (ch)
+                    case char.MaxValue:
+                        return CreateTokenAndAdvanceChar(ch);
+                    case ' ':
+                    case '\t':
+                        AdvanceChar(false);
+                        break;
+                    case '\r':
+                    case '\n':
+                        AdvanceChar(true);
+                        break;
+                    case 'a':
+                    case 'b':
+                    case 'c':
+                    case 'd':
+                    case 'e':
+                    case 'f':
+                    case 'g':
+                    case 'h':
+                    case 'i':
+                    case 'j':
+                    case 'k':
+                    case 'l':
+                    case 'm':
+                    case 'n':
+                    case 'o':
+                    case 'p':
+                    case 'q':
+                    case 'r':
+                    case 's':
+                    case 't':
+                    case 'u':
+                    case 'v':
+                    case 'w':
+                    case 'x':
+                    case 'y':
+                    case 'z':
+                    case 'A':
+                    case 'B':
+                    case 'C':
+                    case 'D':
+                    case 'E':
+                    case 'F':
+                    case 'G':
+                    case 'H':
+                    case 'I':
+                    case 'J':
+                    case 'K':
+                    case 'L':
+                    case 'M':
+                    case 'N':
+                    case 'O':
+                    case 'P':
+                    case 'Q':
+                    case 'R':
+                    case 'S':
+                    case 'T':
+                    case 'U':
+                    case 'V':
+                    case 'W':
+                    case 'X':
+                    case 'Y':
+                    case 'Z':
+                    case '_':
+                        MarkTokenStart();
+                        AdvanceChar(false);
+                        return CreateNameToken(GetStringBuilder().Append(ch));
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9':
+                    case '+':
+                    case '-':
+                        MarkTokenStart();
+                        AdvanceChar(false);
+                        return CreateNumberToken(GetStringBuilder().Append(ch), false);
+                    case '.':
+                        MarkTokenStart();
+                        AdvanceChar(false);
+                        return CreateNumberToken(GetStringBuilder().Append(ch), true);
+                    case '/':
+                        nextch = GetNextChar();
+                        if (nextch == '/')
                         {
-                            case char.MaxValue:
-                                return CreateTokenAndAdvanceChar(ch);
-                            case '/':
+                            AdvanceChar(false);
+                            AdvanceChar(false);
+                            while (true)
+                            {
+                                ch = GetChar();
+                                if (ch == char.MaxValue || IsNewLine(ch))
                                 {
-                                    var nextch = GetNextChar();
-                                    if (nextch == '/')
-                                    {
-                                        state = State.InSingleLineComment;
-                                        MarkTokenStart();
-                                        AdvanceChar(false);
-                                        AdvanceChar(false);
-                                    }
-                                    else if (nextch == '*')
-                                    {
-                                        state = State.InDelimitedComment;
-                                        MarkTokenStart();
-                                        AdvanceChar(false);
-                                        AdvanceChar(false);
-                                    }
-                                    else
-                                    {
-                                        return CreateTokenAndAdvanceChar(ch);
-                                    }
+                                    break;
                                 }
-                                break;
-                            case '@':
-                                {
-                                    var nextch = GetNextChar();
-                                    if (nextch == '"')
-                                    {
-                                        state = State.InVerbatimString;
-                                        MarkTokenStart();
-                                        AdvanceChar(false);
-                                        AdvanceChar(false);
-                                        sb = GetStringBuilder();
-                                    }
-                                    else if (IsIdentifierStartCharacter(nextch))
-                                    {
-                                        state = State.InVerbatimName;
-                                        MarkTokenStart();
-                                        AdvanceChar(false);
-                                        AdvanceChar(false);
-                                        sb = GetStringBuilder();
-                                        sb.Append(nextch);
-                                    }
-                                    else
-                                    {
-                                        return CreateTokenAndAdvanceChar(ch);
-                                    }
-                                }
-                                break;
-                            case '"':
-                                {
-                                    state = State.InNormalString;
-                                    MarkTokenStart();
+                                else
                                     AdvanceChar(false);
-                                    sb = GetStringBuilder();
-                                }
-                                break;
-                            case '\'':
-                                {
-                                    state = State.InChar;
-                                    MarkTokenStart();
-                                    AdvanceChar(false);
-                                    sb = GetStringBuilder();
-                                }
-                                break;
-                            case '-':
-                            case '+':
-                                {
-                                    var nextch = GetNextChar();
-                                    if (IsDecDigit(nextch))
-                                    {
-                                        state = State.InNumberInteger;
-                                        MarkTokenStart();
-                                        AdvanceChar(false);
-                                        AdvanceChar(false);
-                                        sb = GetStringBuilder();
-                                        sb.Append(ch);
-                                        sb.Append(nextch);
-                                    }
-                                    else if (nextch == '.')
-                                    {
-                                        var nextnextch = GetNextNextChar();
-                                        if (IsDecDigit(nextnextch))
-                                        {
-                                            state = State.InNumberFraction;
-                                            MarkTokenStart();
-                                            AdvanceChar(false);
-                                            AdvanceChar(false);
-                                            AdvanceChar(false);
-                                            sb = GetStringBuilder();
-                                            sb.Append(ch);
-                                            sb.Append(nextch);
-                                            sb.Append(nextnextch);
-                                        }
-                                        else
-                                        {
-                                            return CreateTokenAndAdvanceChar(ch);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        return CreateTokenAndAdvanceChar(ch);
-                                    }
-                                }
-                                break;
-                            case '.':
-                                {
-                                    var nextch = GetNextChar();
-                                    if (IsDecDigit(nextch))
-                                    {
-                                        state = State.InNumberFraction;
-                                        MarkTokenStart();
-                                        AdvanceChar(false);
-                                        AdvanceChar(false);
-                                        sb = GetStringBuilder();
-                                        sb.Append(ch);
-                                        sb.Append(nextch);
-                                    }
-                                    else
-                                    {
-                                        return CreateTokenAndAdvanceChar(ch);
-                                    }
-                                }
-                                break;
-                            case ':':
-                                {
-                                    var nextch = GetNextChar();
-                                    if (nextch == ':')
-                                    {
-                                        MarkTokenStart();
-                                        AdvanceChar(false);
-                                        AdvanceChar(false);
-                                        return CreateToken(TokenKind.ColonColon, null);
-                                    }
-                                    else
-                                    {
-                                        return CreateTokenAndAdvanceChar(ch);
-                                    }
-                                }
-                            case '#':
-                                {
-                                    var nextch = GetNextChar();
-                                    if (nextch == '[')
-                                    {
-                                        MarkTokenStart();
-                                        AdvanceChar(false);
-                                        AdvanceChar(false);
-                                        return CreateToken(TokenKind.HashOpenBracket, null);
-                                    }
-                                    else
-                                    {
-                                        return CreateTokenAndAdvanceChar(ch);
-                                    }
-                                }
-                            default:
-                                if (IsWhitespace(ch))
+                            }
+                        }
+                        else if (nextch == '*')
+                        {
+                            AdvanceChar(false);
+                            AdvanceChar(false);
+                            while (true)
+                            {
+                                ch = GetChar();
+                                if (ch == '*')
                                 {
                                     AdvanceChar(false);
+                                    ch = GetChar();
+                                    if (ch == '/')
+                                    {
+                                        AdvanceChar(false);
+                                        break;
+                                    }
                                 }
-                                else if (IsNewLine(ch))
+                                else if (ch == char.MaxValue)
                                 {
-                                    AdvanceChar(true);
-                                }
-                                else if (IsIdentifierStartCharacter(ch))
-                                {
-                                    state = State.InNormalName;
-                                    MarkTokenStart();
-                                    AdvanceChar(false);
-                                    sb = GetStringBuilder();
-                                    sb.Append(ch);
-                                }
-                                else if (IsDecDigit(ch))
-                                {
-                                    state = State.InNumberInteger;
-                                    MarkTokenStart();
-                                    AdvanceChar(false);
-                                    sb = GetStringBuilder();
-                                    sb.Append(ch);
+                                    ErrorAndThrow("*/ expected.");
                                 }
                                 else
                                 {
-                                    return CreateTokenAndAdvanceChar(ch);
+                                    AdvanceChar(true);
                                 }
-                                break;
-                        }
-                        break;
-
-                    case State.InSingleLineComment:
-                        if (IsNewLine(ch) || ch == char.MaxValue)
-                        {
-                            state = State.None;
+                            }
                         }
                         else
                         {
-                            AdvanceChar(false);
+                            return CreateTokenAndAdvanceChar(ch);
                         }
                         break;
-                    case State.InDelimitedComment:
-                        if (ch == '*')
+                    case '@':
+                        nextch = GetNextChar();
+                        if (nextch == '"')
                         {
+                            MarkTokenStart();
                             AdvanceChar(false);
+                            AdvanceChar(false);
+                            sb = GetStringBuilder();
+                            while (true)
+                            {
+                                ch = GetChar();
+                                if (ch == '"')
+                                {
+                                    AdvanceChar(false);
+                                    ch = GetChar();
+                                    if (ch == '"')
+                                    {
+                                        sb.Append('"');
+                                        AdvanceChar(false);
+                                    }
+                                    else
+                                    {
+                                        return CreateToken(TokenKind.VerbatimString, sb.ToString());
+                                    }
+                                }
+                                else if (ch == char.MaxValue)
+                                {
+                                    ErrorAndThrow("\" expected.");
+                                }
+                                else
+                                {
+                                    sb.Append(ch);
+                                    AdvanceChar(true);
+                                }
+                            }
+                        }
+                        else if (IsIdentifierStartCharacter(nextch))
+                        {
+                            MarkTokenStart();
+                            AdvanceChar(false);
+                            AdvanceChar(false);
+                            return CreateNameToken(GetStringBuilder().Append(nextch), TokenKind.VerbatimName);
+                        }
+                        else
+                        {
+                            return CreateTokenAndAdvanceChar(ch);
+                        }
+                    case '"':
+                        MarkTokenStart();
+                        AdvanceChar(false);
+                        sb = GetStringBuilder();
+                        while (true)
+                        {
                             ch = GetChar();
-                            if (ch == '/')
-                            {
-                                AdvanceChar(false);
-                                state = State.None;
-                            }
-                        }
-                        else if (ch == char.MaxValue)
-                        {
-                            ErrorAndThrow("*/ expected.");
-                        }
-                        else
-                        {
-                            AdvanceChar(true);
-                        }
-                        break;
-                    case State.InNormalName:
-                    case State.InVerbatimName:
-                        if (IsIdentifierPartCharacter(ch))
-                        {
-                            sb.Append(ch);
-                            AdvanceChar(false);
-                        }
-                        else
-                        {
-                            return CreateToken(state == State.InNormalName ? TokenKind.NormalName : TokenKind.VerbatimName, sb.ToString());
-                        }
-                        break;
-                    case State.InNormalString:
-                        if (ch == '\\')
-                        {
-                            AdvanceChar(false);
-                            ProcessCharEscSeq(sb);
-                        }
-                        else if (ch == '"')
-                        {
-                            AdvanceChar(false);
-                            return CreateToken(TokenKind.NormalString, sb.ToString());
-                        }
-                        else if (IsNewLine(ch) || ch == char.MaxValue)
-                        {
-                            ErrorAndThrow("\" expected.");
-                        }
-                        else
-                        {
-                            sb.Append(ch);
-                            AdvanceChar(false);
-                        }
-                        break;
-                    case State.InVerbatimString:
-                        if (ch == '"')
-                        {
-                            AdvanceChar(false);
-                            ch = GetChar();
-                            if (ch == '"')
-                            {
-                                sb.Append('"');
-                                AdvanceChar(false);
-                            }
-                            else
-                            {
-                                return CreateToken(TokenKind.VerbatimString, sb.ToString());
-                            }
-                        }
-                        else if (ch == char.MaxValue)
-                        {
-                            ErrorAndThrow("\" expected.");
-                        }
-                        else
-                        {
-                            sb.Append(ch);
-                            AdvanceChar(true);
-                        }
-                        break;
-                    case State.InChar:
-                        if (sb.Length == 0)
-                        {
                             if (ch == '\\')
                             {
                                 AdvanceChar(false);
-                                ProcessCharEscSeq(sb);
+                                CreateCharEscapeSequence(sb);
                             }
-                            else if (ch == '\'' || IsNewLine(ch) || ch == char.MaxValue)
+                            else if (ch == '"')
                             {
-                                ErrorAndThrow("Character expected.");
+                                AdvanceChar(false);
+                                return CreateToken(TokenKind.NormalString, sb.ToString());
+                            }
+                            else if (ch == char.MaxValue || IsNewLine(ch))
+                            {
+                                ErrorAndThrow("\" expected.");
                             }
                             else
                             {
@@ -491,115 +386,202 @@ namespace SData.Internal
                                 AdvanceChar(false);
                             }
                         }
-                        else if (ch == '\'')
+                    case '\'':
+                        MarkTokenStart();
+                        AdvanceChar(false);
+                        sb = GetStringBuilder();
+                        while (true)
                         {
-                            AdvanceChar(false);
-                            return CreateToken(TokenKind.Char, sb.ToString());
-                        }
-                        else
-                        {
-                            ErrorAndThrow("' expected.");
-                        }
-                        break;
-                    case State.InNumberInteger:
-                        if (IsDecDigit(ch))
-                        {
-                            sb.Append(ch);
-                            AdvanceChar(false);
-                        }
-                        else if (ch == '.')
-                        {
-                            var nextch = GetNextChar();
-                            if (IsDecDigit(nextch))
-                            {
-                                state = State.InNumberFraction;
-                                sb.Append(ch);
-                                sb.Append(nextch);
-                                AdvanceChar(false);
-                                AdvanceChar(false);
-                            }
-                            else
-                            {
-                                return CreateToken(TokenKind.Integer, sb.ToString());
-                            }
-                        }
-                        else if (ch == 'E' || ch == 'e')
-                        {
-                            sb.Append(ch);
-                            AdvanceChar(false);
                             ch = GetChar();
-                            if (ch == '+' || ch == '-')
+                            if (sb.Length == 0)
                             {
-                                sb.Append(ch);
-                                AdvanceChar(false);
-                                ch = GetChar();
+                                if (ch == '\\')
+                                {
+                                    AdvanceChar(false);
+                                    CreateCharEscapeSequence(sb);
+                                }
+                                else if (ch == '\'' || ch == char.MaxValue || IsNewLine(ch))
+                                {
+                                    ErrorAndThrow("Character expected.");
+                                }
+                                else
+                                {
+                                    sb.Append(ch);
+                                    AdvanceChar(false);
+                                }
                             }
-                            if (IsDecDigit(ch))
+                            else if (ch == '\'')
                             {
-                                state = State.InNumberExponent;
-                                sb.Append(ch);
                                 AdvanceChar(false);
+                                return CreateToken(TokenKind.Char, sb.ToString());
                             }
                             else
                             {
-                                ErrorAndThrow("Decimal digit expected.");
+                                ErrorAndThrow("' expected.");
                             }
+                        }
+                    case ':':
+                        nextch = GetNextChar();
+                        if (nextch == ':')
+                        {
+                            MarkTokenStart();
+                            AdvanceChar(false);
+                            AdvanceChar(false);
+                            return CreateToken(TokenKind.ColonColon, null);
                         }
                         else
                         {
-                            return CreateToken(TokenKind.Integer, sb.ToString());
+                            return CreateTokenAndAdvanceChar(ch);
                         }
-                        break;
-                    case State.InNumberFraction:
-                        if (IsDecDigit(ch))
+                    case '#':
+                        nextch = GetNextChar();
+                        if (nextch == '[')
                         {
-                            sb.Append(ch);
+                            MarkTokenStart();
                             AdvanceChar(false);
-                        }
-                        else if (ch == 'E' || ch == 'e')
-                        {
-                            sb.Append(ch);
                             AdvanceChar(false);
-                            ch = GetChar();
-                            if (ch == '+' || ch == '-')
-                            {
-                                sb.Append(ch);
-                                AdvanceChar(false);
-                                ch = GetChar();
-                            }
-                            if (IsDecDigit(ch))
-                            {
-                                state = State.InNumberExponent;
-                                sb.Append(ch);
-                                AdvanceChar(false);
-                            }
-                            else
-                            {
-                                ErrorAndThrow("Decimal digit expected.");
-                            }
+                            return CreateToken(TokenKind.HashOpenBracket, null);
                         }
                         else
                         {
-                            return CreateToken(TokenKind.Decimal, sb.ToString());
+                            return CreateTokenAndAdvanceChar(ch);
                         }
-                        break;
-                    case State.InNumberExponent:
-                        if (IsDecDigit(ch))
-                        {
-                            sb.Append(ch);
-                            AdvanceChar(false);
-                        }
-                        else
-                        {
-                            return CreateToken(TokenKind.Real, sb.ToString());
-                        }
-                        break;
                     default:
-                        throw new InvalidOperationException("Invalid stateKind: " + state);
+                        if (IsWhitespace(ch))
+                        {
+                            AdvanceChar(false);
+                        }
+                        else if (IsNewLine(ch))
+                        {
+                            AdvanceChar(true);
+                        }
+                        else if (IsIdentifierStartCharacter(ch))
+                        {
+                            MarkTokenStart();
+                            AdvanceChar(false);
+                            return CreateNameToken(GetStringBuilder().Append(ch));
+                        }
+                        else
+                        {
+                            return CreateTokenAndAdvanceChar(ch);
+                        }
+                        break;
+
                 }
             }
         }
-        private void ProcessCharEscSeq(StringBuilder sb)
+
+        private Token CreateNameToken(StringBuilder sb, TokenKind kind = TokenKind.NormalName)
+        {
+            while (true)
+            {
+                var ch = GetChar();
+                if (IsIdentifierPartCharacter(ch))
+                {
+                    sb.Append(ch);
+                    AdvanceChar(false);
+                }
+                else
+                {
+                    return CreateToken(kind, sb.ToString());
+                }
+            }
+        }
+        private Token CreateNumberToken(StringBuilder sb, bool inFraction)
+        {
+            char ch, nextch;
+            if (inFraction)
+            {
+                goto FRACTION;
+            }
+            while (true)
+            {
+                ch = GetChar();
+                if (IsDecDigit(ch))
+                {
+                    sb.Append(ch);
+                    AdvanceChar(false);
+                }
+                else if (ch == '.')
+                {
+                    nextch = GetNextChar();
+                    if (IsDecDigit(nextch))
+                    {
+                        sb.Append(ch);
+                        sb.Append(nextch);
+                        AdvanceChar(false);
+                        AdvanceChar(false);
+                        goto FRACTION;
+                    }
+                    else
+                    {
+                        return CreateToken(TokenKind.Integer, sb.ToString());
+                    }
+                }
+                else if (ch == 'E' || ch == 'e')
+                {
+                    sb.Append(ch);
+                    AdvanceChar(false);
+                    goto EXPONENT;
+                }
+                else
+                {
+                    return CreateToken(TokenKind.Integer, sb.ToString());
+                }
+            }
+        FRACTION:
+            while (true)
+            {
+                ch = GetChar();
+                if (IsDecDigit(ch))
+                {
+                    sb.Append(ch);
+                    AdvanceChar(false);
+                }
+                else if (ch == 'E' || ch == 'e')
+                {
+                    sb.Append(ch);
+                    AdvanceChar(false);
+                    goto EXPONENT;
+                }
+                else
+                {
+                    return CreateToken(TokenKind.Decimal, sb.ToString());
+                }
+            }
+        EXPONENT:
+            ch = GetChar();
+            if (ch == '+' || ch == '-')
+            {
+                sb.Append(ch);
+                AdvanceChar(false);
+                ch = GetChar();
+            }
+            if (IsDecDigit(ch))
+            {
+                sb.Append(ch);
+                AdvanceChar(false);
+                while (true)
+                {
+                    ch = GetChar();
+                    if (IsDecDigit(ch))
+                    {
+                        sb.Append(ch);
+                        AdvanceChar(false);
+                    }
+                    else
+                    {
+                        return CreateToken(TokenKind.Real, sb.ToString());
+                    }
+                }
+            }
+            else
+            {
+                ErrorAndThrow("Decimal digit expected.");
+                return default(Token);
+            }
+        }
+        private void CreateCharEscapeSequence(StringBuilder sb)
         {
             var ch = GetChar();
             switch (ch)
