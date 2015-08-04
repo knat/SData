@@ -1,10 +1,10 @@
 ﻿SData is an elegant data interchange solution. It has three parts: schema language, data format and programming language mapping.
 
-Why SData? 1)Schema is the specification of data, data is the instance of schema. 2)If schema is used at compile time, a data interchange solution(e.g. Google's Protocol Buffers, Microsoft's Bond, and SData) is statically typed, that is, schema and programming languages are mapped at compile time, the programming language code is intrinsically aware of the data structures and types; otherwise dynamically typed(e.g. JSON), data and programming languages are mapped at run time. Statically typed data interchange solutions have better performance and safety but less flexibility, this is the same difference between statically typed programming language and dynamically typed programming language. 3)SData schema is elegant and powerful, it is object-oriented and has rich types, the programming language mapping mechanism is graceful and flexible, programmers may feel at home when using SData.
+Why SData? 1)Schema is the description of data, data is the instance of schema. 2)If schema is used at compile time, a data interchange solution(e.g. Google's Protocol Buffers, Microsoft's Bond, and SData) is statically typed, that is, schema and programming languages are mapped at compile time, the programming language code is intrinsically aware of the data structures and types; otherwise dynamically typed(e.g. JSON), data and programming languages are mapped at run time. Statically typed data interchange solutions have better performance and safety but less flexibility, this is the same difference between statically typed programming language and dynamically typed programming language. 3)SData schema is elegant and powerful, it is object-oriented and has rich types, the programming language mapping mechanism is graceful and flexible, programmers may feel at home when using SData.
 
 ## Schema Language
 
-Schema is the specification of data.
+Schema is the description of data.
 
 ![](Docs/Schema1.png)
 
