@@ -264,11 +264,39 @@ namespace SData.Internal
                     case '7':
                     case '8':
                     case '9':
-                    case '+':
-                    case '-':
                         MarkTokenStart();
                         AdvanceChar(false);
                         return CreateNumberToken(GetStringBuilder().Append(ch), false);
+                    case '+':
+                    case '-':
+                        nextch = GetNextChar();
+                        if (IsDecDigit(nextch))
+                        {
+                            MarkTokenStart();
+                            AdvanceChar(false);
+                            AdvanceChar(false);
+                            return CreateNumberToken(GetStringBuilder().Append(ch).Append(nextch), false);
+                        }
+                        else if (nextch == '.')
+                        {
+                            var nextnextch = GetNextNextChar();
+                            if (IsDecDigit(nextnextch))
+                            {
+                                MarkTokenStart();
+                                AdvanceChar(false);
+                                AdvanceChar(false);
+                                AdvanceChar(false);
+                                return CreateNumberToken(GetStringBuilder().Append(ch).Append(nextch).Append(nextnextch), true);
+                            }
+                            else
+                            {
+                                return CreateTokenAndAdvanceChar(ch);
+                            }
+                        }
+                        else
+                        {
+                            return CreateTokenAndAdvanceChar(ch);
+                        }
                     case '.':
                         nextch = GetNextChar();
                         if (IsDecDigit(nextch))
