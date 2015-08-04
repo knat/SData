@@ -270,9 +270,18 @@ namespace SData.Internal
                         AdvanceChar(false);
                         return CreateNumberToken(GetStringBuilder().Append(ch), false);
                     case '.':
-                        MarkTokenStart();
-                        AdvanceChar(false);
-                        return CreateNumberToken(GetStringBuilder().Append(ch), true);
+                        nextch = GetNextChar();
+                        if (IsDecDigit(nextch))
+                        {
+                            MarkTokenStart();
+                            AdvanceChar(false);
+                            AdvanceChar(false);
+                            return CreateNumberToken(GetStringBuilder().Append(ch).Append(nextch), true);
+                        }
+                        else
+                        {
+                            return CreateTokenAndAdvanceChar(ch);
+                        }
                     case '/':
                         nextch = GetNextChar();
                         if (nextch == '/')
