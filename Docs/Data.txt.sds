@@ -1,13 +1,13 @@
 ﻿
 //This is the data of schema Biz.sds
-//a data file must contain one and only one class value
+//a data file must contain one and only one root class value
 <a0/*alias*/ = "http://example.com/business"/*URI*/, a1 = "http://example.com/business/api">
 {//value of class DataSet
     ETag/*property name*/ = "AQIDBAUGBwg="/*property value*/,
     //property order in data can be different than in schema
     People = [//set value
-        //because Person is abstract, type indicator '(alias::className)' is required to
-        //  indicate the data type. if type indicator is absent, the data type is
+        //because class Person is abstract, type indicator '(alias::className)' is required
+        //  to indicate the data type. if type indicator is absent, the data type is
         //  the declared type in schema
         (a0::Customer) {
             Id = 1,
@@ -38,8 +38,8 @@
             Phones = [],//empty list
             Reputation = 7,//underlying atom value is acceptable
             UnknownProperty1 = { P1 = [], P2 = true }//unknown property is permitted
-            //nullable property(e.g: Orders) can be omitted, 
-            //   non-nullable property must be present
+            //a property with nullable type(e.g. Orders) can be omitted, 
+            //   a property with non-nullable type must be present
         },
         (a0::Supplier) {
             Id = 3,
