@@ -61,7 +61,7 @@ namespace "http://example.com/project1"
 
 namespace "http://example.com/project2"
 {
-	//to reference another namespace's members, import that namespace first
+	//to reference other namespace's members, import that namespace first
     import "http://example.com/project1"/*namespace URI*/ as p1//URI alias
 
 	class Class1 extends p1/*URI alias*/::Class1//member name
