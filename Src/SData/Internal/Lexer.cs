@@ -405,7 +405,7 @@ namespace SData.Internal
                             MarkTokenStart();
                             AdvanceChar(false);
                             AdvanceChar(false);
-                            return CreateNameToken(GetStringBuilder().Append(nextch), TokenKind.VerbatimName);
+                            return CreateNameToken(GetStringBuilder().Append(nextch), false);
                         }
                         else
                         {
@@ -421,7 +421,7 @@ namespace SData.Internal
                             if (ch == '\\')
                             {
                                 AdvanceChar(false);
-                                CreateCharEscapeSequence(sb);
+                                ProcessCharEscapeSequence(sb);
                             }
                             else if (ch == '"')
                             {
@@ -450,7 +450,7 @@ namespace SData.Internal
                                 if (ch == '\\')
                                 {
                                     AdvanceChar(false);
-                                    CreateCharEscapeSequence(sb);
+                                    ProcessCharEscapeSequence(sb);
                                 }
                                 else if (ch == '\'' || ch == char.MaxValue || IsNewLine(ch))
                                 {
@@ -523,7 +523,7 @@ namespace SData.Internal
             }
         }
 
-        private Token CreateNameToken(StringBuilder sb, TokenKind kind = TokenKind.NormalName)
+        private Token CreateNameToken(StringBuilder sb, bool isNormal = true)
         {
             while (true)
             {
@@ -535,7 +535,7 @@ namespace SData.Internal
                 }
                 else
                 {
-                    return CreateToken(kind, sb.ToString());
+                    return CreateToken(isNormal ? TokenKind.NormalName : TokenKind.VerbatimName, sb.ToString());
                 }
             }
         }
@@ -633,7 +633,7 @@ namespace SData.Internal
                 return default(Token);
             }
         }
-        private void CreateCharEscapeSequence(StringBuilder sb)
+        private void ProcessCharEscapeSequence(StringBuilder sb)
         {
             var ch = GetChar();
             switch (ch)
