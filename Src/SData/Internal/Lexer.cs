@@ -103,7 +103,7 @@ namespace SData.Internal
         {
             return GetChar(2);
         }
-        private void AdvanceChar(bool checkNewLine)
+        private void ConsumeChar(bool checkNewLine = false)
         {
             _lastLine = _line;
             _lastColumn = _column;
@@ -154,10 +154,10 @@ namespace SData.Internal
             var pos = new TextPosition(_line, _column);
             return new TextSpan(_filePath, _totalIndex, _index < _count ? 1 : 0, pos, pos);
         }
-        private Token CreateTokenAndAdvanceChar(char ch)
+        private Token CreateTokenAndConsumeChar(char ch)
         {
             var token = new Token(ch, null, CreateSingleTextSpan());
-            AdvanceChar(false);
+            ConsumeChar();
             return token;
         }
         private void ErrorAndThrow(string errMsg, TextSpan textSpan)
@@ -189,14 +189,14 @@ namespace SData.Internal
                     case '>':
                     case '=':
                     case ',':
-                        return CreateTokenAndAdvanceChar(ch);
+                        return CreateTokenAndConsumeChar(ch);
                     case ' ':
                     case '\t':
-                        AdvanceChar(false);
+                        ConsumeChar();
                         break;
                     case '\r':
                     case '\n':
-                        AdvanceChar(true);
+                        ConsumeChar(true);
                         break;
                     case 'a':
                     case 'b':
@@ -252,7 +252,7 @@ namespace SData.Internal
                     case 'Z':
                     case '_':
                         MarkTokenStart();
-                        AdvanceChar(false);
+                        ConsumeChar();
                         return CreateNameToken(GetStringBuilder().Append(ch));
                     case '0':
                     case '1':
@@ -265,7 +265,7 @@ namespace SData.Internal
                     case '8':
                     case '9':
                         MarkTokenStart();
-                        AdvanceChar(false);
+                        ConsumeChar();
                         return CreateNumberToken(GetStringBuilder().Append(ch), false);
                     case '+':
                     case '-':
@@ -273,8 +273,8 @@ namespace SData.Internal
                         if (IsDecDigit(nextch))
                         {
                             MarkTokenStart();
-                            AdvanceChar(false);
-                            AdvanceChar(false);
+                            ConsumeChar();
+                            ConsumeChar();
                             return CreateNumberToken(GetStringBuilder().Append(ch).Append(nextch), false);
                         }
                         else if (nextch == '.')
@@ -283,39 +283,39 @@ namespace SData.Internal
                             if (IsDecDigit(nextnextch))
                             {
                                 MarkTokenStart();
-                                AdvanceChar(false);
-                                AdvanceChar(false);
-                                AdvanceChar(false);
+                                ConsumeChar();
+                                ConsumeChar();
+                                ConsumeChar();
                                 return CreateNumberToken(GetStringBuilder().Append(ch).Append(nextch).Append(nextnextch), true);
                             }
                             else
                             {
-                                return CreateTokenAndAdvanceChar(ch);
+                                return CreateTokenAndConsumeChar(ch);
                             }
                         }
                         else
                         {
-                            return CreateTokenAndAdvanceChar(ch);
+                            return CreateTokenAndConsumeChar(ch);
                         }
                     case '.':
                         nextch = GetNextChar();
                         if (IsDecDigit(nextch))
                         {
                             MarkTokenStart();
-                            AdvanceChar(false);
-                            AdvanceChar(false);
+                            ConsumeChar();
+                            ConsumeChar();
                             return CreateNumberToken(GetStringBuilder().Append(ch).Append(nextch), true);
                         }
                         else
                         {
-                            return CreateTokenAndAdvanceChar(ch);
+                            return CreateTokenAndConsumeChar(ch);
                         }
                     case '/':
                         nextch = GetNextChar();
                         if (nextch == '/')
                         {
-                            AdvanceChar(false);
-                            AdvanceChar(false);
+                            ConsumeChar();
+                            ConsumeChar();
                             while (true)
                             {
                                 ch = GetChar();
@@ -324,23 +324,23 @@ namespace SData.Internal
                                     break;
                                 }
                                 else
-                                    AdvanceChar(false);
+                                    ConsumeChar();
                             }
                         }
                         else if (nextch == '*')
                         {
-                            AdvanceChar(false);
-                            AdvanceChar(false);
+                            ConsumeChar();
+                            ConsumeChar();
                             while (true)
                             {
                                 ch = GetChar();
                                 if (ch == '*')
                                 {
-                                    AdvanceChar(false);
+                                    ConsumeChar();
                                     ch = GetChar();
                                     if (ch == '/')
                                     {
-                                        AdvanceChar(false);
+                                        ConsumeChar();
                                         break;
                                     }
                                 }
@@ -350,13 +350,13 @@ namespace SData.Internal
                                 }
                                 else
                                 {
-                                    AdvanceChar(true);
+                                    ConsumeChar(true);
                                 }
                             }
                         }
                         else
                         {
-                            return CreateTokenAndAdvanceChar(ch);
+                            return CreateTokenAndConsumeChar(ch);
                         }
                         break;
                     case '@':
@@ -364,20 +364,20 @@ namespace SData.Internal
                         if (nextch == '"')
                         {
                             MarkTokenStart();
-                            AdvanceChar(false);
-                            AdvanceChar(false);
+                            ConsumeChar();
+                            ConsumeChar();
                             sb = GetStringBuilder();
                             while (true)
                             {
                                 ch = GetChar();
                                 if (ch == '"')
                                 {
-                                    AdvanceChar(false);
+                                    ConsumeChar();
                                     ch = GetChar();
                                     if (ch == '"')
                                     {
                                         sb.Append('"');
-                                        AdvanceChar(false);
+                                        ConsumeChar();
                                     }
                                     else
                                     {
@@ -391,41 +391,41 @@ namespace SData.Internal
                                 else if (ch == '\r' && GetNextChar() == '\n')
                                 {
                                     sb.Append("\r\n");
-                                    AdvanceChar(true);
+                                    ConsumeChar(true);
                                 }
                                 else
                                 {
                                     sb.Append(ch);
-                                    AdvanceChar(true);
+                                    ConsumeChar(true);
                                 }
                             }
                         }
                         else if (IsIdentifierStartCharacter(nextch))
                         {
                             MarkTokenStart();
-                            AdvanceChar(false);
-                            AdvanceChar(false);
+                            ConsumeChar();
+                            ConsumeChar();
                             return CreateNameToken(GetStringBuilder().Append(nextch), false);
                         }
                         else
                         {
-                            return CreateTokenAndAdvanceChar(ch);
+                            return CreateTokenAndConsumeChar(ch);
                         }
                     case '"':
                         MarkTokenStart();
-                        AdvanceChar(false);
+                        ConsumeChar();
                         sb = GetStringBuilder();
                         while (true)
                         {
                             ch = GetChar();
                             if (ch == '\\')
                             {
-                                AdvanceChar(false);
+                                ConsumeChar();
                                 ProcessCharEscapeSequence(sb);
                             }
                             else if (ch == '"')
                             {
-                                AdvanceChar(false);
+                                ConsumeChar();
                                 return CreateToken(TokenKind.NormalString, sb.ToString());
                             }
                             else if (ch == char.MaxValue || IsNewLine(ch))
@@ -435,12 +435,12 @@ namespace SData.Internal
                             else
                             {
                                 sb.Append(ch);
-                                AdvanceChar(false);
+                                ConsumeChar();
                             }
                         }
                     case '\'':
                         MarkTokenStart();
-                        AdvanceChar(false);
+                        ConsumeChar();
                         sb = GetStringBuilder();
                         while (true)
                         {
@@ -449,7 +449,7 @@ namespace SData.Internal
                             {
                                 if (ch == '\\')
                                 {
-                                    AdvanceChar(false);
+                                    ConsumeChar();
                                     ProcessCharEscapeSequence(sb);
                                 }
                                 else if (ch == '\'' || ch == char.MaxValue || IsNewLine(ch))
@@ -459,12 +459,12 @@ namespace SData.Internal
                                 else
                                 {
                                     sb.Append(ch);
-                                    AdvanceChar(false);
+                                    ConsumeChar();
                                 }
                             }
                             else if (ch == '\'')
                             {
-                                AdvanceChar(false);
+                                ConsumeChar();
                                 return CreateToken(TokenKind.Char, sb.ToString());
                             }
                             else
@@ -477,45 +477,45 @@ namespace SData.Internal
                         if (nextch == ':')
                         {
                             MarkTokenStart();
-                            AdvanceChar(false);
-                            AdvanceChar(false);
+                            ConsumeChar();
+                            ConsumeChar();
                             return CreateToken(TokenKind.ColonColon, null);
                         }
                         else
                         {
-                            return CreateTokenAndAdvanceChar(ch);
+                            return CreateTokenAndConsumeChar(ch);
                         }
                     case '#':
                         nextch = GetNextChar();
                         if (nextch == '[')
                         {
                             MarkTokenStart();
-                            AdvanceChar(false);
-                            AdvanceChar(false);
+                            ConsumeChar();
+                            ConsumeChar();
                             return CreateToken(TokenKind.HashOpenBracket, null);
                         }
                         else
                         {
-                            return CreateTokenAndAdvanceChar(ch);
+                            return CreateTokenAndConsumeChar(ch);
                         }
                     default:
                         if (IsWhitespace(ch))
                         {
-                            AdvanceChar(false);
+                            ConsumeChar();
                         }
                         else if (IsNewLine(ch))
                         {
-                            AdvanceChar(true);
+                            ConsumeChar(true);
                         }
                         else if (IsIdentifierStartCharacter(ch))
                         {
                             MarkTokenStart();
-                            AdvanceChar(false);
+                            ConsumeChar();
                             return CreateNameToken(GetStringBuilder().Append(ch));
                         }
                         else
                         {
-                            return CreateTokenAndAdvanceChar(ch);
+                            return CreateTokenAndConsumeChar(ch);
                         }
                         break;
 
@@ -531,7 +531,7 @@ namespace SData.Internal
                 if (IsIdentifierPartCharacter(ch))
                 {
                     sb.Append(ch);
-                    AdvanceChar(false);
+                    ConsumeChar();
                 }
                 else
                 {
@@ -552,7 +552,7 @@ namespace SData.Internal
                 if (IsDecDigit(ch))
                 {
                     sb.Append(ch);
-                    AdvanceChar(false);
+                    ConsumeChar();
                 }
                 else if (ch == '.')
                 {
@@ -561,8 +561,8 @@ namespace SData.Internal
                     {
                         sb.Append(ch);
                         sb.Append(nextch);
-                        AdvanceChar(false);
-                        AdvanceChar(false);
+                        ConsumeChar();
+                        ConsumeChar();
                         goto FRACTION;
                     }
                     else
@@ -573,7 +573,7 @@ namespace SData.Internal
                 else if (ch == 'E' || ch == 'e')
                 {
                     sb.Append(ch);
-                    AdvanceChar(false);
+                    ConsumeChar();
                     goto EXPONENT;
                 }
                 else
@@ -588,12 +588,12 @@ namespace SData.Internal
                 if (IsDecDigit(ch))
                 {
                     sb.Append(ch);
-                    AdvanceChar(false);
+                    ConsumeChar();
                 }
                 else if (ch == 'E' || ch == 'e')
                 {
                     sb.Append(ch);
-                    AdvanceChar(false);
+                    ConsumeChar();
                     goto EXPONENT;
                 }
                 else
@@ -606,20 +606,20 @@ namespace SData.Internal
             if (ch == '+' || ch == '-')
             {
                 sb.Append(ch);
-                AdvanceChar(false);
+                ConsumeChar();
                 ch = GetChar();
             }
             if (IsDecDigit(ch))
             {
                 sb.Append(ch);
-                AdvanceChar(false);
+                ConsumeChar();
                 while (true)
                 {
                     ch = GetChar();
                     if (IsDecDigit(ch))
                     {
                         sb.Append(ch);
-                        AdvanceChar(false);
+                        ConsumeChar();
                     }
                     else
                     {
@@ -640,7 +640,7 @@ namespace SData.Internal
             {
                 case 'u':
                     {
-                        AdvanceChar(false);
+                        ConsumeChar();
                         int value = 0;
                         for (var i = 0; i < 4; ++i)
                         {
@@ -649,7 +649,7 @@ namespace SData.Internal
                             {
                                 value <<= 4;
                                 value |= HexValue(ch);
-                                AdvanceChar(false);
+                                ConsumeChar();
                             }
                             else
                             {
@@ -672,7 +672,7 @@ namespace SData.Internal
                 case 'v': sb.Append('\v'); break;
                 default: ErrorAndThrow("Invalid character escape sequence."); break;
             }
-            AdvanceChar(false);
+            ConsumeChar();
         }
 
         #region helpers
