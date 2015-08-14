@@ -140,7 +140,7 @@ namespace SData
                             var mapEnumerator = enumerator as IDictionaryEnumerator;
                             if (mapEnumerator != null)
                             {
-                                context.Append("#[");
+                                context.Append("$[");
                                 context.AppendLine();
                                 context.PushIndent();
                                 while (mapEnumerator.MoveNext())
@@ -228,7 +228,7 @@ namespace SData
                     var collMd = (CollectionTypeMd)nonNullableTypeMd;
                     var keyMd = collMd.MapKeyType;
                     var valueMd = collMd.ItemOrValueType;
-                    context.Append("#[");
+                    context.Append("$[");
                     context.AppendLine();
                     context.PushIndent();
                     IDictionaryEnumerator mapEnumerator = collMd.GetMapEnumerator(value);

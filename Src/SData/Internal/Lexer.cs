@@ -485,14 +485,14 @@ namespace SData.Internal
                         {
                             return CreateTokenAndConsumeChar(ch);
                         }
-                    case '#':
+                    case '$':
                         nextch = GetNextChar();
                         if (nextch == '[')
                         {
                             MarkTokenStart();
                             ConsumeChar();
                             ConsumeChar();
-                            return CreateToken(TokenKind.HashOpenBracket, null);
+                            return CreateToken(TokenKind.DollarOpenBracket, null);
                         }
                         else
                         {

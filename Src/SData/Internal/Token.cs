@@ -14,7 +14,7 @@ namespace SData.Internal
         Real,// +-123.45Ee+-12
         //
         ColonColon,// ::
-        HashOpenBracket,// #[
+        DollarOpenBracket,// $[
     }
     public struct Token : IEquatable<Token>
     {

@@ -472,7 +472,7 @@ namespace SData.Internal
                 textSpan = token.TextSpan;
                 return true;
             }
-            if (Token((int)TokenKind.HashOpenBracket, out token))
+            if (Token((int)TokenKind.DollarOpenBracket, out token))
             {
                 if (typeMd != null)
                 {

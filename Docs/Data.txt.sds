@@ -46,7 +46,7 @@
             Name = "Eric",
             Phones = [ "7654321" ],
             BankAccount = "11223344",
-            Products = #[//map value
+            Products = $[//map value
                 1/*key value*/ = "Mountain Bike"/*value value*/,
                 2 = "Road Bike",
             ],

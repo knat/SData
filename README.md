@@ -568,11 +568,10 @@ namespace Example.Business
             return true;
         }
         //the serializer will call base method(Person.OnLoaded()) first
-        private bool OnLoaded(LoadingContext context, TextSpan textSpan)
+        private bool OnLoaded(MyLoadingContext context, TextSpan textSpan)
         {
             Console.WriteLine("Customer.OnLoaded()");
-            var myContext = (MyLoadingContext)context;
-            if (myContext.CheckCustomerReputation && Reputation == Business.Reputation.Bad)
+            if (context.CheckCustomerReputation && Reputation == Business.Reputation.Bad)
             {
                 context.AddDiagnostic(DiagnosticSeverity.Warning,
                     (int)MyDiagnosticCode.BadReputationCustomer, "Bad reputation customer.",
@@ -761,8 +760,8 @@ decimal-value-token:
 real-value-token:
 ('+' | '-')? (decimal-digit* '.')? decimal-digit+ ('E' | 'e') ('+' | '-')? decimal-digit+
 ;
-hash-open-bracket-token:
-'#['
+dollar-open-bracket-token:
+'$['
 ;
 colon-colon-token:
 '::'
@@ -813,7 +812,7 @@ list-or-set-value:
 '[' (value (',' value)* ',')? ']'
 ;
 map-value:
-hash-open-bracket-token (key-value (',' key-value)* ','?)? ']'
+dollar-open-bracket-token (key-value (',' key-value)* ','?)? ']'
 ;
 key-value:
 value '=' value
