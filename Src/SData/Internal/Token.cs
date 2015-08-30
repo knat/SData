@@ -2,19 +2,19 @@
 
 namespace SData.Internal
 {
-    public enum TokenKind
+    public static class TokenKind
     {
-        NormalName = -1000,// id
-        VerbatimName,// @id
-        NormalString,// "..."
-        VerbatimString,// @"..."
-        Char,// 'c'
-        Integer,// +-123
-        Decimal,// +-123.45
-        Real,// +-123.45Ee+-12
+        public const int NormalName = -1000;// id
+        public const int VerbatimName = -999;// @id
+        public const int NormalString = -998;// "..."
+        public const int VerbatimString = -997;// @"..."
+        public const int Char = -996;// 'c'
+        public const int Integer = -995;// +-123
+        public const int Decimal = -994;// +-123.45
+        public const int Real = -993;// +-123.45Ee+-12
         //
-        ColonColon,// ::
-        DollarOpenBracket,// $[
+        public const int ColonColon = -900;// ::
+        public const int DollarOpenBracket = -899;// $[
     }
     public struct Token : IEquatable<Token>
     {
@@ -27,13 +27,7 @@ namespace SData.Internal
         public readonly int Kind;
         public readonly string Value;//for TokenKind.NormalName to TokenKind.Real
         public readonly TextSpan TextSpan;
-        public TokenKind TokenKind
-        {
-            get
-            {
-                return (TokenKind)Kind;
-            }
-        }
+
         public bool IsValid
         {
             get
@@ -52,14 +46,14 @@ namespace SData.Internal
         {
             get
             {
-                return TokenKind == TokenKind.NormalName;
+                return Kind == TokenKind.NormalName;
             }
         }
         public bool IsVerbatimName
         {
             get
             {
-                return TokenKind == TokenKind.VerbatimName;
+                return Kind == TokenKind.VerbatimName;
             }
         }
         public bool IsName
@@ -105,14 +99,14 @@ namespace SData.Internal
         {
             get
             {
-                return TokenKind == TokenKind.NormalString;
+                return Kind == TokenKind.NormalString;
             }
         }
         public bool IsVerbatimString
         {
             get
             {
-                return TokenKind == TokenKind.VerbatimString;
+                return Kind == TokenKind.VerbatimString;
             }
         }
         public bool IsString
@@ -126,28 +120,28 @@ namespace SData.Internal
         {
             get
             {
-                return TokenKind == TokenKind.Char;
+                return Kind == TokenKind.Char;
             }
         }
         public bool IsInteger
         {
             get
             {
-                return TokenKind == TokenKind.Integer;
+                return Kind == TokenKind.Integer;
             }
         }
         public bool IsDecimal
         {
             get
             {
-                return TokenKind == TokenKind.Decimal;
+                return Kind == TokenKind.Decimal;
             }
         }
         public bool IsReal
         {
             get
             {
-                return TokenKind == TokenKind.Real;
+                return Kind == TokenKind.Real;
             }
         }
         public bool IsAtomValue

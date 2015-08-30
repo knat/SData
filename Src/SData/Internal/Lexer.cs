@@ -143,10 +143,10 @@ namespace SData.Internal
             _tokenStartIndex = _totalIndex;
             _tokenStartPosition = new TextPosition(_line, _column);
         }
-        private Token CreateToken(TokenKind tokenKind, string value)
+        private Token CreateToken(int tokenKind, string value)
         {
             var startIndex = _tokenStartIndex;
-            return new Token((int)tokenKind, value, new TextSpan(_filePath, startIndex, _totalIndex - startIndex,
+            return new Token(tokenKind, value, new TextSpan(_filePath, startIndex, _totalIndex - startIndex,
                 _tokenStartPosition, new TextPosition(_lastLine, _lastColumn)));
         }
         private TextSpan CreateSingleTextSpan()
