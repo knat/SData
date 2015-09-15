@@ -167,13 +167,6 @@ namespace SData.Compiler
             }
             return false;
         }
-        static class d
-        {
-            static d()
-            {
-
-            }
-        }
 
         private const string _csGeneratedFileBanner = @"//
 //Auto-generated, DO NOT EDIT.
